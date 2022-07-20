@@ -21,7 +21,7 @@
     <ClCompile Include="GDICapture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="SaveBmp.cpp">
+    <ClCompile Include="SaveFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="GDICapture.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="SaveBmp.h">
+    <ClInclude Include="SaveFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

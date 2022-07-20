@@ -129,11 +129,11 @@
   <ItemGroup>
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="SaveBmp.cpp" />
+    <ClCompile Include="SaveFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GDICapture.h" />
-    <ClInclude Include="SaveBmp.h" />
+    <ClInclude Include="SaveFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "GDICapture.h"
-#include "SaveBmp.h"
+#include "SaveFile.h"
 
 int main()
 {
@@ -15,7 +15,9 @@ int main()
     unsigned char* rgbBuffer = new unsigned char[width * height * 3];
     GDICapture::CaptureRgb24(rgbBuffer);
 
-    SaveBmp::Rgb24ToBmp("Screen.bmp", rgbBuffer, width, height);
+    SaveFile::Rgb24("Screen.rgb", rgbBuffer, width, height);
+
+    SaveFile::Rgb24ToBmp("Screen.bmp", rgbBuffer, width, height);
 
     return 0;
 }
