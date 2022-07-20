@@ -1,1 +1,8 @@
 .vs
+*.tlog
+*.ilk
+*.log
+*.obj
+*.idb
+*.pdb
+*.recipe
