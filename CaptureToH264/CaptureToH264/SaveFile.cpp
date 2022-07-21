@@ -39,6 +39,18 @@ void SaveFile::Rgb24(const char* filename, unsigned char* rgbbuf, int width, int
     fclose(fp);
 }
 
+void SaveFile::Rgb32(const char* filename, unsigned char* rgbbuf, int width, int height)
+{
+    int size = width * height * 4 * sizeof(char);
+
+    FILE* fp = nullptr;
+    fopen_s(&fp, filename, "wb");
+    if (!fp) return;
+
+    fwrite(rgbbuf, size, 1, fp);
+    fclose(fp);
+}
+
 void SaveFile::Rgb24ToBmp(const char* filename, unsigned char* rgbbuf, int width, int height)
 {
     int size = width * height * 3 * sizeof(char);
@@ -56,6 +68,40 @@ void SaveFile::Rgb24ToBmp(const char* filename, unsigned char* rgbbuf, int width
     bih.biHeight = height;
     bih.biPlanes = 1;
     bih.biBitCount = 24;
+    bih.biCompression = 0;
+    bih.biSizeImage = size;
+    bih.biXPelsPerMeter = 0;
+    bih.biYPelsPerMeter = 0;
+    bih.biClrUsed = 0;
+    bih.biClrImportant = 0;
+
+    FILE* fp = nullptr;
+    fopen_s(&fp, filename, "wb");
+    if (!fp) return;
+
+    fwrite(&bfh, sizeof(BITMAPFILEHEADER), 1, fp);
+    fwrite(&bih, sizeof(BITMAPINFOHEADER), 1, fp);
+    fwrite(rgbbuf, size, 1, fp);
+    fclose(fp);
+}
+
+void SaveFile::Rgb32ToBmp(const char* filename, unsigned char* rgbbuf, int width, int height)
+{
+    int size = width * height * 4 * sizeof(char);
+
+    BITMAPFILEHEADER bfh;
+    bfh.bfType = (WORD)0x4d42;
+    bfh.bfSize = size + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    bfh.bfReserved1 = 0; // reserved  
+    bfh.bfReserved2 = 0; // reserved  
+    bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+    BITMAPINFOHEADER bih;
+    bih.biSize = sizeof(BITMAPINFOHEADER);
+    bih.biWidth = width;
+    bih.biHeight = -height;
+    bih.biPlanes = 1;
+    bih.biBitCount = 32;
     bih.biCompression = 0;
     bih.biSizeImage = size;
     bih.biXPelsPerMeter = 0;
