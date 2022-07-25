@@ -127,13 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Convert.cpp" />
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="SaveFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Convert.h" />
     <ClInclude Include="GDICapture.h" />
-    <ClInclude Include="SaveFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

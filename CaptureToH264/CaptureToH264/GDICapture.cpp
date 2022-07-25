@@ -35,6 +35,8 @@ bool GDICapture::CaptureRgb24(unsigned char* rgbBuffer, int bufferSize)
     DeleteDC(hdcMemory);
     ReleaseDC(HWND_DESKTOP, hdcScreen);
     DeleteObject(hBitmap);
+
+    return true;
 }
 
 bool GDICapture::CaptureRgb32(unsigned char* rgbBuffer, int bufferSize)
@@ -59,4 +61,6 @@ bool GDICapture::CaptureRgb32(unsigned char* rgbBuffer, int bufferSize)
     DeleteDC(hdcMemory);
     ReleaseDC(HWND_DESKTOP, hdcScreen);
     DeleteObject(bitmap);
+
+    return true;
 }

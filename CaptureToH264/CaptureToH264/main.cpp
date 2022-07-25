@@ -1,7 +1,58 @@
 #include <iostream>
 #include <Windows.h>
 #include "GDICapture.h"
-#include "SaveFile.h"
+#include "Convert.h"
+
+void SaveFile(const char* fileName, unsigned char* buf, int size)
+{
+    FILE* fp = nullptr;
+    fopen_s(&fp, fileName, "wb");
+    if (!fp) return;
+    fwrite(buf, size, 1, fp);
+    fclose(fp);
+}
+
+void CaptureRgb24(int width, int height)
+{
+    int rgb24Size = width * height * 3;
+    unsigned char* rgbBuffer = new unsigned char[rgb24Size];
+    if (GDICapture::CaptureRgb24(rgbBuffer, rgb24Size)) {
+        SaveFile("Screen24.rgb", rgbBuffer, rgb24Size);
+
+        int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size;
+        unsigned char* bmpBuffer = new unsigned char[bmpSize];
+        if (Convert::Rgb24ToBmp(rgbBuffer, width, height, bmpBuffer)) {
+            SaveFile("Screen24.bmp", bmpBuffer, bmpSize);
+        }
+
+        int yuvSize = width * height * 3 / 2;
+        unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
+        if (Convert::Rgb24ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
+            SaveFile("Screen24.yuv", yuvBuffer, yuvSize);
+        }
+    }
+}
+
+void CaptureRgb32(int width, int height)
+{
+    int rgb32Size = width * height * 4;
+    unsigned char* rgbBuffer = new unsigned char[rgb32Size];
+    if (GDICapture::CaptureRgb32(rgbBuffer, rgb32Size)) {
+        SaveFile("Screen32.rgb", rgbBuffer, rgb32Size);
+
+        int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size;
+        unsigned char* bmpBuffer = new unsigned char[bmpSize];
+        if (Convert::Rgb32ToBmp(rgbBuffer, width, height, bmpBuffer)) {
+            SaveFile("Screen32.bmp", bmpBuffer, bmpSize);
+        }
+
+        /*int yuvSize = width * height * 3 / 2;
+        unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
+        if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
+            SaveFile("Screen32.yuv", yuvBuffer, yuvSize);
+        }*/
+    }
+}
 
 int main()
 {
@@ -12,19 +63,8 @@ int main()
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    int rgb24Size = width * height * 3;
-    unsigned char* rgbBuffer = new unsigned char[rgb24Size];
-    if (GDICapture::CaptureRgb24(rgbBuffer, rgb24Size)) {
-        SaveFile::Rgb24("Screen24.rgb", rgbBuffer, width, height);
-        SaveFile::Rgb24ToBmp("Screen24.bmp", rgbBuffer, width, height);
-    }
-
-    int rgb32Size = width * height * 4;
-    unsigned char* rgbBuffer32 = new unsigned char[rgb32Size];
-    if (GDICapture::CaptureRgb32(rgbBuffer32, rgb32Size)) {
-        SaveFile::Rgb32("Screen32.rgb", rgbBuffer32, width, height);
-        SaveFile::Rgb32ToBmp("Screen32.bmp", rgbBuffer32, width, height);
-    }
+    CaptureRgb24(width, height);
+    CaptureRgb32(width, height);    
 
     return 0;
 }

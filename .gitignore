@@ -6,3 +6,8 @@
 *.idb
 *.pdb
 *.recipe
+*.rgb
+*.bmp
+*.yuv
+Debug
+Release
