@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include "GDICapture.h"
 #include "Convert.h"
-#include "libyuv/convert_from_argb.h"
 
 void SaveFile(const char* fileName, unsigned char* buf, int size)
 {
@@ -15,40 +14,41 @@ void SaveFile(const char* fileName, unsigned char* buf, int size)
 
 void CaptureRgb24(int width, int height)
 {
-    int rgb24Size = width * height * 3;
-    unsigned char* rgbBuffer = new unsigned char[rgb24Size];
-    if (GDICapture::CaptureRgb24(rgbBuffer, rgb24Size)) {
+    unsigned char* rgbBuffer;
+    int rgb24Size = GDICapture::CaptureRgb24(&rgbBuffer);
+    if (rgb24Size > 0) {
         SaveFile("Screen24.rgb", rgbBuffer, rgb24Size);
 
-        int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size;
-        unsigned char* bmpBuffer = new unsigned char[bmpSize];
-        if (Convert::Rgb24ToBmp(rgbBuffer, width, height, bmpBuffer)) {
+        unsigned char* bmpBuffer = nullptr;
+        int bmpSize = Convert::Rgb24ToBmp(rgbBuffer, width, height, &bmpBuffer);
+        if (bmpSize > 0) {
             SaveFile("Screen24.bmp", bmpBuffer, bmpSize);
         }
 
-        int yuvSize = width * height * 3 / 2;
+        /*int yuvSize = width * height * 3 / 2;
         unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
         if (Convert::Rgb24ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
             SaveFile("Screen24.yuv", yuvBuffer, yuvSize);
-        }
+        }*/
     }
 }
 
 void CaptureRgb32(int width, int height)
 {
-    int rgb32Size = width * height * 4;
-    unsigned char* rgbBuffer = new unsigned char[rgb32Size];
-    if (GDICapture::CaptureRgb32(rgbBuffer, rgb32Size)) {
+    unsigned char* rgbBuffer;
+    int rgb32Size = GDICapture::CaptureRgb32(&rgbBuffer);
+    if (rgb32Size > 0) {
         SaveFile("Screen32.rgb", rgbBuffer, rgb32Size);
-        int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size;
-        unsigned char* bmpBuffer = new unsigned char[bmpSize];
-        if (Convert::Rgb32ToBmp(rgbBuffer, width, height, bmpBuffer)) {
+        
+        unsigned char* bmpBuffer = nullptr;
+        int bmpSize = Convert::Rgb32ToBmp(rgbBuffer, width, height, &bmpBuffer);
+        if (bmpSize > 0) {
             SaveFile("Screen32.bmp", bmpBuffer, bmpSize);
         }
 
-        int yuvSize = width * height * 3 / 2;
-        unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
-        if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
+        unsigned char* yuvBuffer = nullptr;
+        int yuvSize = Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer);
+        if (yuvSize > 0) {
             SaveFile("Screen32.yuv", yuvBuffer, yuvSize);
         }
     }

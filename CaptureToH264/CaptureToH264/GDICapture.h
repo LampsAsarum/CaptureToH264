@@ -6,7 +6,7 @@
 class GDICapture
 {
 public:
-    static bool CaptureRgb24(unsigned char* rgbBuffer, int bufferSize);
-    static bool CaptureRgb32(unsigned char* rgbBuffer, int bufferSize);
+    static int CaptureRgb24(unsigned char** rgbBuffer);
+    static int CaptureRgb32(unsigned char** rgbBuffer);
 };
 

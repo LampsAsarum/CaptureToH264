@@ -44,13 +44,13 @@ typedef  struct  tagBITMAPINFOHEADER
 参考链接：https://www.freesion.com/article/1054806317/
 */
 
-bool Convert::Rgb24ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char* bmpBuf)
+int Convert::Rgb24ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char** bmpBuf)
 {
-    int size = width * height * 3 * sizeof(char);
+    int rgb24Size = width * height * 3 * sizeof(char);
 
     BITMAPFILEHEADER bfh;
     bfh.bfType = (WORD)0x4d42;
-    bfh.bfSize = size + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    bfh.bfSize = rgb24Size + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
     bfh.bfReserved1 = 0; // reserved  
     bfh.bfReserved2 = 0; // reserved  
     bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -62,26 +62,28 @@ bool Convert::Rgb24ToBmp(unsigned char* rgbBuf, int width, int height, unsigned 
     bih.biPlanes = 1;
     bih.biBitCount = 24;
     bih.biCompression = 0;
-    bih.biSizeImage = size;
+    bih.biSizeImage = rgb24Size;
     bih.biXPelsPerMeter = 0;
     bih.biYPelsPerMeter = 0;
     bih.biClrUsed = 0;
     bih.biClrImportant = 0;
 
-    memcpy(bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
-    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
-    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, size);
+    int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size;
+    *bmpBuf = new unsigned char[bmpSize];
+    memcpy(*bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
+    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
+    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb24Size);
 
-    return true;
+    return bmpSize;
 }
 
-bool Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char* bmpBuf)
+int Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char** bmpBuf)
 {
-    int size = width * height * 4 * sizeof(char);
+    int rgb32Size = width * height * 4 * sizeof(char);
 
     BITMAPFILEHEADER bfh;
     bfh.bfType = (WORD)0x4d42;
-    bfh.bfSize = size + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    bfh.bfSize = rgb32Size + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
     bfh.bfReserved1 = 0; // reserved  
     bfh.bfReserved2 = 0; // reserved  
     bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -93,20 +95,22 @@ bool Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned 
     bih.biPlanes = 1;
     bih.biBitCount = 32;
     bih.biCompression = 0;
-    bih.biSizeImage = size;
+    bih.biSizeImage = rgb32Size;
     bih.biXPelsPerMeter = 0;
     bih.biYPelsPerMeter = 0;
     bih.biClrUsed = 0;
     bih.biClrImportant = 0;
 
-    memcpy(bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
-    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
-    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, size);
+    int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size;
+    *bmpBuf = new unsigned char[bmpSize];
+    memcpy(*bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
+    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
+    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb32Size);
 
-    return true;
+    return bmpSize;
 }
 
-bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
+int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
 {
     unsigned char* ptrY, * ptrU, * ptrV, * ptrRGB;
     memset(yuvBuf, 0, width * height * 3 / 2);
@@ -141,10 +145,10 @@ bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsign
     return true;
 }
 
-bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
+int Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char** yuvBuf)
 {
-    //int yuvBufSize = width * height * 3 / 2;
-    //unsigned char* yuvBuf = new unsigned char[yuvBufSize];
+    int yuv420Size = width * height * 3 / 2;
+    *yuvBuf = new unsigned char[yuv420Size];
 
     //source-stride
     int Dst_Stride_Y = width;
@@ -155,8 +159,8 @@ bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsign
     int uv_length = uv_stride * ((height + 1) / 2);
 
     //source-data
-    unsigned char* Y_data_Dst = yuvBuf;
-    unsigned char* U_data_Dst = yuvBuf + y_length;
+    unsigned char* Y_data_Dst = *yuvBuf;
+    unsigned char* U_data_Dst = *yuvBuf + y_length;
     unsigned char* V_data_Dst = U_data_Dst + uv_length;
 
     //BGRAToI420, 内存顺序是BGRA,所以用方法得反过来ARGB
@@ -167,5 +171,5 @@ bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsign
         V_data_Dst, uv_stride,
         width, height);
 
-    return true;
+    return yuv420Size;
 }
