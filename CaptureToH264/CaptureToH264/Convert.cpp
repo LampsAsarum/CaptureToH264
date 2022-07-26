@@ -1,5 +1,6 @@
 #include "Convert.h"
 #include <Windows.h>
+#include "libyuv/convert_from_argb.h"
 
 namespace 
 {
@@ -105,18 +106,19 @@ bool Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned 
     return true;
 }
 
-bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int w, int h, unsigned char* yuvBuf)
+bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
 {
     unsigned char* ptrY, * ptrU, * ptrV, * ptrRGB;
-    memset(yuvBuf, 0, w * h * 3 / 2);
+    memset(yuvBuf, 0, width * height * 3 / 2);
     ptrY = yuvBuf;
-    ptrU = yuvBuf + w * h;
-    ptrV = ptrU + (w * h * 1 / 4);
+    ptrU = yuvBuf + width * height;
+    ptrV = ptrU + (width * height * 1 / 4);
     unsigned char y, u, v, r, g, b;
-    for (int j = 0; j < h; j++) {
-        ptrRGB = rgbBuf + w * j * 3;
-        for (int i = 0; i < w; i++) {
-
+    for (int j = 0; j < height; j++) 
+    {
+        ptrRGB = rgbBuf + width * j * 3;
+        for (int i = 0; i < width; i++) 
+        {
             r = *(ptrRGB++);
             g = *(ptrRGB++);
             b = *(ptrRGB++);
@@ -124,15 +126,46 @@ bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int w, int h, unsigned char* 
             u = (unsigned char)((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
             v = (unsigned char)((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
             *(ptrY++) = ClipValue(y, 0, 255);
-            if (j % 2 == 0 && i % 2 == 0) {
+            if (j % 2 == 0 && i % 2 == 0) 
+            {
                 *(ptrU++) = ClipValue(u, 0, 255);
             }
             else {
-                if (i % 2 == 0) {
+                if (i % 2 == 0) 
+                {
                     *(ptrV++) = ClipValue(v, 0, 255);
                 }
             }
         }
     }
+    return true;
+}
+
+bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
+{
+    //int yuvBufSize = width * height * 3 / 2;
+    //unsigned char* yuvBuf = new unsigned char[yuvBufSize];
+
+    //source-stride
+    int Dst_Stride_Y = width;
+    const int uv_stride = (width + 1) / 2;
+
+    //source-length
+    const int y_length = width * height;
+    int uv_length = uv_stride * ((height + 1) / 2);
+
+    //source-data
+    unsigned char* Y_data_Dst = yuvBuf;
+    unsigned char* U_data_Dst = yuvBuf + y_length;
+    unsigned char* V_data_Dst = U_data_Dst + uv_length;
+
+    //BGRAToI420, 内存顺序是BGRA,所以用方法得反过来ARGB
+    libyuv::ARGBToI420(rgbBuf,
+        width * 4,
+        Y_data_Dst, Dst_Stride_Y,
+        U_data_Dst, uv_stride,
+        V_data_Dst, uv_stride,
+        width, height);
+
     return true;
 }
