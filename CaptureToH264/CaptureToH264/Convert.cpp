@@ -44,7 +44,7 @@ typedef  struct  tagBITMAPINFOHEADER
 参考链接：https://www.freesion.com/article/1054806317/
 */
 
-int Convert::Rgb24ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char** bmpBuf)
+int Convert::Rgb24ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char** bmpBuf)
 {
     int rgb24Size = width * height * 3 * sizeof(char);
 
@@ -77,7 +77,7 @@ int Convert::Rgb24ToBmp(unsigned char* rgbBuf, int width, int height, unsigned c
     return bmpSize;
 }
 
-int Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned char** bmpBuf)
+int Convert::Rgb32ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char** bmpBuf)
 {
     int rgb32Size = width * height * 4 * sizeof(char);
 
@@ -110,7 +110,7 @@ int Convert::Rgb32ToBmp(unsigned char* rgbBuf, int width, int height, unsigned c
     return bmpSize;
 }
 
-int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char* yuvBuf)
+int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char* yuvBuf)
 {
     unsigned char* ptrY, * ptrU, * ptrV, * ptrRGB;
     memset(yuvBuf, 0, width * height * 3 / 2);
@@ -146,7 +146,7 @@ int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, int width, int height, unsigne
 }
 
 // YUV420p：每4个 Y分量 共用一组 UV分量，前面全是Y分量，后面是U分量，再后面是V分量
-int Convert::Rgb32ToYUV420(unsigned char* rgbBuf, int width, int height, unsigned char** yuvBuf)
+int Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char** yuvBuf)
 {
     int yuv420Size = width * height * 3 / 2; // Ysize:(width*height); Usize:(width*height)/2; Vsize:(width*height)/2;
     *yuvBuf = new unsigned char[yuv420Size];

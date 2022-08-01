@@ -92,7 +92,7 @@ DXGICapture::DXGICapture()
     }
 }
 
-int DXGICapture::CaptureRgb32(unsigned char** rgbBuffer)
+bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize)
 {
     IDXGIResource* desktopResource = nullptr;
     DXGI_OUTDUPL_FRAME_INFO frameInfo;
@@ -170,9 +170,6 @@ int DXGICapture::CaptureRgb32(unsigned char** rgbBuffer)
     DXGI_MAPPED_RECT MappedSurface;
     hr = CopySurface->Map(&MappedSurface, DXGI_MAP_READ);
 
-    int rgb32Size = desc.Width * desc.Height * 4;
-    *rgbBuffer = new unsigned char[rgb32Size];
-
     if (SUCCEEDED(hr)) {
         for (int i = 0; i < 1080; ++i) {
             memcpy(*rgbBuffer + i * MappedSurface.Pitch, MappedSurface.pBits + i * MappedSurface.Pitch, MappedSurface.Pitch);
@@ -187,5 +184,5 @@ int DXGICapture::CaptureRgb32(unsigned char** rgbBuffer)
     if (m_pDXGIOutputDup) {
         hr = m_pDXGIOutputDup->ReleaseFrame();
     }
-    return rgb32Size;
+    return true;
 }

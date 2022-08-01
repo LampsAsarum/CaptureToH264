@@ -3,7 +3,7 @@
 
 // API介绍：https://blog.csdn.net/zjy1175044232/article/details/111476009
 
-int GDICapture::CaptureRgb24(unsigned char** rgbBuffer)
+bool GDICapture::CaptureRgb24(unsigned char** rgbBuffer, const int rgbBufferSize)
 {
     HDC hdcScreen = GetDC(HWND_DESKTOP); //获取桌面DC
     //DC就是设备上下文，就是当前的这个窗体的一些属性，例如使用的位图、画笔、画刷等
@@ -11,7 +11,9 @@ int GDICapture::CaptureRgb24(unsigned char** rgbBuffer)
     int height = GetDeviceCaps(hdcScreen, VERTRES);//获取屏幕垂直像素数
 
     int rgb24Size = width * height * 3;
-    *rgbBuffer = new unsigned char[rgb24Size];
+    if (rgbBufferSize < rgb24Size) {
+        return false;
+    }
 
     HDC hdcMemory = CreateCompatibleDC(hdcScreen);//创建一个与桌面DC兼容的内存DC
     HBITMAP hBitmap = CreateCompatibleBitmap(hdcScreen, width, height);//建立一个与桌面DC兼容的位图
@@ -35,17 +37,19 @@ int GDICapture::CaptureRgb24(unsigned char** rgbBuffer)
     ReleaseDC(HWND_DESKTOP, hdcScreen);
     DeleteObject(hBitmap);
 
-    return rgb24Size;
+    return true;
 }
 
-int GDICapture::CaptureRgb32(unsigned char** rgbBuffer)
+bool GDICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize)
 {
     HDC hdcScreen = GetDC(HWND_DESKTOP);
     int width = GetDeviceCaps(hdcScreen, HORZRES);
     int height = GetDeviceCaps(hdcScreen, VERTRES);
     
     int rgb32Size = width * height * 4;
-    *rgbBuffer = new unsigned char[rgb32Size];
+    if (rgbBufferSize < rgb32Size) {
+        return false;
+    }
     
     HDC hdcMemory = CreateCompatibleDC(hdcScreen);
     HBITMAP bitmap = CreateCompatibleBitmap(hdcScreen, width, height);
@@ -60,5 +64,5 @@ int GDICapture::CaptureRgb32(unsigned char** rgbBuffer)
     ReleaseDC(HWND_DESKTOP, hdcScreen);
     DeleteObject(bitmap);
     
-    return rgb32Size;
+    return true;
 }

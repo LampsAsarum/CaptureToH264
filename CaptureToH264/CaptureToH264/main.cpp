@@ -15,9 +15,10 @@ void SaveFile(const char* fileName, unsigned char* buf, int size)
 
 void CaptureRgb24(int width, int height)
 {
-    unsigned char* rgbBuffer;
-    int rgb24Size = GDICapture::CaptureRgb24(&rgbBuffer);
-    if (rgb24Size > 0) {
+    int rgb24Size = width * height * 3;
+    unsigned char* rgbBuffer = new unsigned char[rgb24Size];
+    if (GDICapture::CaptureRgb24(&rgbBuffer, rgb24Size)) 
+    {
         SaveFile("Screen24.rgb", rgbBuffer, rgb24Size);
 
         unsigned char* bmpBuffer = nullptr;
@@ -36,9 +37,10 @@ void CaptureRgb24(int width, int height)
 
 void CaptureRgb32(int width, int height)
 {
-    unsigned char* rgbBuffer;
-    int rgb32Size = GDICapture::CaptureRgb32(&rgbBuffer);
-    if (rgb32Size > 0) {
+    int rgb32Size = width * height * 4;
+    unsigned char* rgbBuffer = new unsigned char[rgb32Size];
+    if (GDICapture::CaptureRgb32(&rgbBuffer, rgb32Size))
+    {
         SaveFile("Screen32.rgb", rgbBuffer, rgb32Size);
         
         unsigned char* bmpBuffer = nullptr;
@@ -57,11 +59,12 @@ void CaptureRgb32(int width, int height)
 
 void DXGICaptureRgb32(int width, int height)
 {
-    unsigned char* rgbBuffer;
+    int rgb32Size = width * height * 4;
+    unsigned char* rgbBuffer = new unsigned char[rgb32Size];
     DXGICapture capture;
-    for (int i = 0; i < 3; i++) {
-        int rgb32Size = capture.CaptureRgb32(&rgbBuffer);
-        if (rgb32Size > 0) {
+    for (int i = 0; i < 3; i++) 
+    {
+        if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
             char picName[128] = { 0 };
             snprintf(picName, sizeof(picName), "DXGIScreen%d.rgb", i);
             SaveFile(picName, rgbBuffer, rgb32Size);

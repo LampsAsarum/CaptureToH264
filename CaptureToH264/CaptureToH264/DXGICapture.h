@@ -10,7 +10,7 @@ class DXGICapture
 {
 public:
     DXGICapture();
-    int CaptureRgb32(unsigned char** rgbBuffer);
+    bool CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize);
 
 private:
     IDXGIOutputDuplication* m_pDXGIOutputDup;
