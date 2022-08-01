@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "GDICapture.h"
+#include "DXGICapture.h"
 #include "Convert.h"
 
 void SaveFile(const char* fileName, unsigned char* buf, int size)
@@ -25,11 +26,11 @@ void CaptureRgb24(int width, int height)
             SaveFile("Screen24.bmp", bmpBuffer, bmpSize);
         }
 
-        /*int yuvSize = width * height * 3 / 2;
+        int yuvSize = width * height * 3 / 2;
         unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
         if (Convert::Rgb24ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
             SaveFile("Screen24.yuv", yuvBuffer, yuvSize);
-        }*/
+        }
     }
 }
 
@@ -54,6 +55,35 @@ void CaptureRgb32(int width, int height)
     }
 }
 
+void DXGICaptureRgb32(int width, int height)
+{
+    unsigned char* rgbBuffer;
+    DXGICapture capture;
+    for (int i = 0; i < 3; i++) {
+        int rgb32Size = capture.CaptureRgb32(&rgbBuffer);
+        if (rgb32Size > 0) {
+            char picName[128] = { 0 };
+            snprintf(picName, sizeof(picName), "DXGIScreen%d.rgb", i);
+            SaveFile(picName, rgbBuffer, rgb32Size);
+
+            unsigned char* bmpBuffer = nullptr;
+            int bmpSize = Convert::Rgb32ToBmp(rgbBuffer, width, height, &bmpBuffer);
+            if (bmpSize > 0) {
+                snprintf(picName, sizeof(picName), "DXGIScreen%d.bmp", i);
+                SaveFile(picName, bmpBuffer, bmpSize);
+            }
+
+            unsigned char* yuvBuffer = nullptr;
+            int yuvSize = Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer);
+            if (yuvSize > 0) {
+                snprintf(picName, sizeof(picName), "DXGIScreen%d.yuv", i);
+                SaveFile(picName, yuvBuffer, yuvSize);
+            }
+        }
+        Sleep(1000);
+    }
+}
+
 int main()
 {
     RECT rect;
@@ -64,7 +94,9 @@ int main()
     int height = rect.bottom - rect.top;
 
     CaptureRgb24(width, height);
-    CaptureRgb32(width, height);    
+    CaptureRgb32(width, height); 
+
+    DXGICaptureRgb32(width, height);
 
     return 0;
 }

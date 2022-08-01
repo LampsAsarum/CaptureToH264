@@ -134,11 +134,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
+    <ClCompile Include="DXGICapture.cpp" />
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Convert.h" />
+    <ClInclude Include="DXGICapture.h" />
     <ClInclude Include="GDICapture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

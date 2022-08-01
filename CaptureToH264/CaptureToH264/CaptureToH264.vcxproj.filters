@@ -24,12 +24,18 @@
     <ClCompile Include="Convert.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="DXGICapture.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GDICapture.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Convert.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DXGICapture.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
