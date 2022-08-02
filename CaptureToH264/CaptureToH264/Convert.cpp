@@ -146,10 +146,12 @@ int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int hei
 }
 
 // YUV420p：每4个 Y分量 共用一组 UV分量，前面全是Y分量，后面是U分量，再后面是V分量
-int Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char** yuvBuf)
+bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char** yuvBuf, const int yuvBufferSize)
 {
-    int yuv420Size = width * height * 3 / 2; // Ysize:(width*height); Usize:(width*height)/2; Vsize:(width*height)/2;
-    *yuvBuf = new unsigned char[yuv420Size];
+    // Ysize:(width*height); Usize:(width*height)/2; Vsize:(width*height)/2;
+    if (yuvBufferSize < width * height * 3 / 2) {
+        return false;
+    }
 
     const int yStride = width;
     const int uvStride = (width + 1) / 2;
@@ -167,5 +169,5 @@ int Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int hei
         vDataDstPtr, uvStride,           // 用于保存v分量的指针；每一行v分量的长度
         width, height);
 
-    return yuv420Size;
+    return true;
 }

@@ -5,10 +5,12 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#define RELEASE_OBJECT(obj) {if(obj) obj->Release(); obj = nullptr;}
+
 DXGICapture::DXGICapture()
-    : m_pDXGIOutputDup(nullptr)
-    , m_pDX11Dev(nullptr)
-    , m_pDX11DevCtx(nullptr)
+    : m_pDXGIOutputDuplication(nullptr)
+    , m_pDX11Device(nullptr)
+    , m_pDX11DeviceContext(nullptr)
 {
     HRESULT hr = S_OK;
 
@@ -22,7 +24,7 @@ DXGICapture::DXGICapture()
     };
     UINT NumDriverTypes = ARRAYSIZE(DriverTypes);
 
-    // Feature levels supported 支持的功能级别
+    //Feature levels supported 支持的功能级别
     //描述Direct3D设备所针对的功能集 https://docs.microsoft.com/zh-cn/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_feature_level
     D3D_FEATURE_LEVEL FeatureLevels[] =
     {
@@ -34,30 +36,31 @@ DXGICapture::DXGICapture()
     UINT NumFeatureLevels = ARRAYSIZE(FeatureLevels);
 
     D3D_FEATURE_LEVEL FeatureLevel;
-    m_pDX11Dev = nullptr;
-    m_pDX11DevCtx = nullptr;
+    m_pDX11Device = nullptr;
+    m_pDX11DeviceContext = nullptr;
 
     //1.Create D3D device 创建D3D设备
     for (UINT driverTypeIndex = 0; driverTypeIndex < NumDriverTypes; driverTypeIndex++)
     {
         hr = D3D11CreateDevice(nullptr, DriverTypes[driverTypeIndex], nullptr, 0,
             FeatureLevels, NumFeatureLevels, D3D11_SDK_VERSION,
-            &m_pDX11Dev, &FeatureLevel, &m_pDX11DevCtx);
+            &m_pDX11Device, &FeatureLevel, &m_pDX11DeviceContext);
         if (SUCCEEDED(hr)) {
             break;
         }
     }
 
     //2.Get DXGI device 获取 DXGI 设备
-    IDXGIDevice* pDXGIDev = nullptr;
-    hr = m_pDX11Dev->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&pDXGIDev));
+    IDXGIDevice* pDXGIDevice = nullptr;
+    hr = m_pDX11Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&pDXGIDevice));
     if (FAILED(hr)) {
         return;
     }
 
     //3.Get DXGI adapter 获取 DXGI 适配器
     IDXGIAdapter* pDXGIAdapter = nullptr;
-    hr = pDXGIDev->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(&pDXGIAdapter));
+    hr = pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(&pDXGIAdapter));
+    RELEASE_OBJECT(pDXGIDevice);
     if (FAILED(hr)) {
         return;
     }
@@ -66,6 +69,7 @@ DXGICapture::DXGICapture()
     UINT i = 0;
     IDXGIOutput* pDXGIOutput = nullptr;
     hr = pDXGIAdapter->EnumOutputs(i, &pDXGIOutput);
+    RELEASE_OBJECT(pDXGIAdapter);
     if (FAILED(hr)) {
         return;
     }
@@ -80,13 +84,15 @@ DXGICapture::DXGICapture()
     //6.QI for Output1 请求接口Output1
     IDXGIOutput1* pDXGIOutput1 = nullptr;
     hr = pDXGIOutput->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&pDXGIOutput1));
+    RELEASE_OBJECT(pDXGIOutput);
     if (FAILED(hr)) {
         return;
     }
 
     //7.Create desktop duplication 创建桌面副本
-    m_pDXGIOutputDup = nullptr;
-    hr = pDXGIOutput1->DuplicateOutput(m_pDX11Dev, &m_pDXGIOutputDup);
+    m_pDXGIOutputDuplication = nullptr;
+    hr = pDXGIOutput1->DuplicateOutput(m_pDX11Device, &m_pDXGIOutputDuplication);
+    RELEASE_OBJECT(pDXGIOutput1);
     if (FAILED(hr)) {
         return;
     }
@@ -94,16 +100,15 @@ DXGICapture::DXGICapture()
 
 bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize)
 {
-    IDXGIResource* desktopResource = nullptr;
+    IDXGIResource* pDesktopResource = nullptr;
     DXGI_OUTDUPL_FRAME_INFO frameInfo;
-    HRESULT hr = m_pDXGIOutputDup->AcquireNextFrame(20, &frameInfo, &desktopResource);
+    HRESULT hr = m_pDXGIOutputDuplication->AcquireNextFrame(20, &frameInfo, &pDesktopResource);
     if (FAILED(hr)) {
         if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-            if (desktopResource) {
-                desktopResource->Release();
-                desktopResource = nullptr;
+            if (pDesktopResource) {
+                RELEASE_OBJECT(pDesktopResource);
             }
-            hr = m_pDXGIOutputDup->ReleaseFrame();
+            hr = m_pDXGIOutputDuplication->ReleaseFrame();
         }
         else {
             return false;
@@ -112,56 +117,46 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
 
     //Query next frame staging buffer 查询下一帧暂存缓冲区
     ID3D11Texture2D* pDX11Texture = nullptr;
-    hr = desktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pDX11Texture));
-    desktopResource->Release();
-    desktopResource = nullptr;
+    hr = pDesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pDX11Texture));
+    RELEASE_OBJECT(pDesktopResource);
     if (FAILED(hr)) {
         return false;
     }
 
-    ID3D11Texture2D* pCopyBuffer = nullptr;
-
     //Copy old description 复制旧描述
-    D3D11_TEXTURE2D_DESC desc;
-    if (pDX11Texture) {
-        pDX11Texture->GetDesc(&desc);
-    }
-    else if (pCopyBuffer) {
-        pCopyBuffer->GetDesc(&desc);
-    }
-    else {
-        return false;
-    }
+    D3D11_TEXTURE2D_DESC frameDescriptor;
+    pDX11Texture->GetDesc(&frameDescriptor);
 
     //Create a new staging buffer for fill frame image 为填充帧图像创建一个新的暂存缓冲区
-    if (pCopyBuffer == nullptr) {
-        D3D11_TEXTURE2D_DESC CopyBufferDesc;
-        CopyBufferDesc.Width = desc.Width;
-        CopyBufferDesc.Height = desc.Height;
-        CopyBufferDesc.MipLevels = 1;
-        CopyBufferDesc.ArraySize = 1;
-        CopyBufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        CopyBufferDesc.SampleDesc.Count = 1;
-        CopyBufferDesc.SampleDesc.Quality = 0;
-        CopyBufferDesc.Usage = D3D11_USAGE_STAGING;
-        CopyBufferDesc.BindFlags = 0;
-        CopyBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        CopyBufferDesc.MiscFlags = 0;
+    frameDescriptor.MipLevels = 1;
+    frameDescriptor.ArraySize = 1;
+    frameDescriptor.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    frameDescriptor.SampleDesc.Count = 1;
+    frameDescriptor.SampleDesc.Quality = 0;
+    frameDescriptor.Usage = D3D11_USAGE_STAGING;
+    frameDescriptor.BindFlags = 0;
+    frameDescriptor.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    frameDescriptor.MiscFlags = 0;
 
-        hr = m_pDX11Dev->CreateTexture2D(&CopyBufferDesc, nullptr, &pCopyBuffer);
-        if (FAILED(hr)) {
-            return false;
-        }
+    ID3D11Texture2D* pCopyBuffer = nullptr;
+    hr = m_pDX11Device->CreateTexture2D(&frameDescriptor, nullptr, &pCopyBuffer);
+    if (FAILED(hr)) {
+        RELEASE_OBJECT(pDX11Texture);
+        m_pDXGIOutputDuplication->ReleaseFrame();
+        return false;
     }
 
     //Copy next staging buffer to new staging buffer 将下一个暂存缓冲区复制到新的暂存缓冲区
     if (pDX11Texture) {
-        m_pDX11DevCtx->CopyResource(pCopyBuffer, pDX11Texture);
+        m_pDX11DeviceContext->CopyResource(pCopyBuffer, pDX11Texture);
+        RELEASE_OBJECT(pDX11Texture);
+        m_pDXGIOutputDuplication->ReleaseFrame();
     }
 
     //Create staging buffer for map bits 为映射位创建暂存缓冲区
     IDXGISurface* CopySurface = nullptr;
     hr = pCopyBuffer->QueryInterface(__uuidof(IDXGISurface), (void**)&CopySurface);
+    RELEASE_OBJECT(pCopyBuffer);
     if (FAILED(hr)) {
         return false;
     }
@@ -171,18 +166,10 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
     hr = CopySurface->Map(&MappedSurface, DXGI_MAP_READ);
 
     if (SUCCEEDED(hr)) {
-        for (int i = 0; i < 1080; ++i) {
-            memcpy(*rgbBuffer + i * MappedSurface.Pitch, MappedSurface.pBits + i * MappedSurface.Pitch, MappedSurface.Pitch);
-        }
+        memcpy(*rgbBuffer, MappedSurface.pBits, rgbBufferSize);
         CopySurface->Unmap();
     }
+    RELEASE_OBJECT(CopySurface);
 
-    CopySurface->Unmap();
-    hr = CopySurface->Release();
-    CopySurface = nullptr;
-
-    if (m_pDXGIOutputDup) {
-        hr = m_pDXGIOutputDup->ReleaseFrame();
-    }
     return true;
 }

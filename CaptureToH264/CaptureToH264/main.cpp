@@ -7,7 +7,7 @@
 void SaveFile(const char* fileName, unsigned char* buf, int size)
 {
     FILE* fp = nullptr;
-    fopen_s(&fp, fileName, "wb");
+    fopen_s(&fp, fileName, "ab");
     if (!fp) return;
     fwrite(buf, size, 1, fp);
     fclose(fp);
@@ -19,18 +19,18 @@ void CaptureRgb24(int width, int height)
     unsigned char* rgbBuffer = new unsigned char[rgb24Size];
     if (GDICapture::CaptureRgb24(&rgbBuffer, rgb24Size)) 
     {
-        SaveFile("Screen24.rgb", rgbBuffer, rgb24Size);
+        SaveFile("GDIScreen24.rgb", rgbBuffer, rgb24Size);
 
         unsigned char* bmpBuffer = nullptr;
         int bmpSize = Convert::Rgb24ToBmp(rgbBuffer, width, height, &bmpBuffer);
         if (bmpSize > 0) {
-            SaveFile("Screen24.bmp", bmpBuffer, bmpSize);
+            SaveFile("GDIScreen24.bmp", bmpBuffer, bmpSize);
         }
 
         int yuvSize = width * height * 3 / 2;
         unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
         if (Convert::Rgb24ToYUV420(rgbBuffer, width, height, yuvBuffer)) {
-            SaveFile("Screen24.yuv", yuvBuffer, yuvSize);
+            SaveFile("GDIScreen24.yuv", yuvBuffer, yuvSize);
         }
     }
 }
@@ -39,20 +39,21 @@ void CaptureRgb32(int width, int height)
 {
     int rgb32Size = width * height * 4;
     unsigned char* rgbBuffer = new unsigned char[rgb32Size];
+    int yuv420Size = width * height * 3 / 2;
+    unsigned char* yuvBuffer = new unsigned char[yuv420Size];
+
     if (GDICapture::CaptureRgb32(&rgbBuffer, rgb32Size))
     {
-        SaveFile("Screen32.rgb", rgbBuffer, rgb32Size);
+        SaveFile("GDIScreen32.rgb", rgbBuffer, rgb32Size);
         
         unsigned char* bmpBuffer = nullptr;
         int bmpSize = Convert::Rgb32ToBmp(rgbBuffer, width, height, &bmpBuffer);
         if (bmpSize > 0) {
-            SaveFile("Screen32.bmp", bmpBuffer, bmpSize);
+            SaveFile("GDIScreen32.bmp", bmpBuffer, bmpSize);
         }
 
-        unsigned char* yuvBuffer = nullptr;
-        int yuvSize = Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer);
-        if (yuvSize > 0) {
-            SaveFile("Screen32.yuv", yuvBuffer, yuvSize);
+        if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
+            SaveFile("GDIScreen32.yuv", yuvBuffer, yuv420Size);
         }
     }
 }
@@ -61,6 +62,9 @@ void DXGICaptureRgb32(int width, int height)
 {
     int rgb32Size = width * height * 4;
     unsigned char* rgbBuffer = new unsigned char[rgb32Size];
+    int yuv420Size = width * height * 3 / 2;
+    unsigned char* yuvBuffer = new unsigned char[yuv420Size];
+
     DXGICapture capture;
     for (int i = 0; i < 3; i++) 
     {
@@ -76,14 +80,31 @@ void DXGICaptureRgb32(int width, int height)
                 SaveFile(picName, bmpBuffer, bmpSize);
             }
 
-            unsigned char* yuvBuffer = nullptr;
-            int yuvSize = Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer);
-            if (yuvSize > 0) {
+            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
                 snprintf(picName, sizeof(picName), "DXGIScreen%d.yuv", i);
-                SaveFile(picName, yuvBuffer, yuvSize);
+                SaveFile(picName, yuvBuffer, yuv420Size);
             }
         }
         Sleep(1000);
+    }
+}
+
+void DXGICaptureRgb32ToYuv(int width, int height)
+{
+    int rgb32Size = width * height * 4;
+    unsigned char* rgbBuffer = new unsigned char[rgb32Size];
+    int yuv420Size = width * height * 3 / 2; 
+    unsigned char* yuvBuffer = new unsigned char[yuv420Size];
+
+    DXGICapture capture;
+    for (int i = 0; i < 100; i++)
+    {
+        if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
+            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
+                SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
+            }
+        }
+        Sleep(25);
     }
 }
 
@@ -96,10 +117,7 @@ int main()
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    CaptureRgb24(width, height);
-    CaptureRgb32(width, height); 
-
-    DXGICaptureRgb32(width, height);
+    DXGICaptureRgb32ToYuv(width, height);
 
     return 0;
 }

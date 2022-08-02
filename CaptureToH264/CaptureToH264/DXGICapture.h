@@ -13,8 +13,8 @@ public:
     bool CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize);
 
 private:
-    IDXGIOutputDuplication* m_pDXGIOutputDup;
-    ID3D11Device* m_pDX11Dev;
-    ID3D11DeviceContext* m_pDX11DevCtx;
+    IDXGIOutputDuplication* m_pDXGIOutputDuplication;
+    ID3D11Device* m_pDX11Device;
+    ID3D11DeviceContext* m_pDX11DeviceContext;
 };
 
