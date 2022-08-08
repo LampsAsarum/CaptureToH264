@@ -104,8 +104,14 @@ void DXGICaptureRgb32ToYuv(int width, int height)
                 SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
             }
         }
-        Sleep(25);
+        std::cout << "---------------";
+        Sleep(50);
     }
+}
+
+void YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, int height)
+{
+    Convert::YUV420ToH264(yuvFilePath, h264FilePath, width, height);
 }
 
 int main()
@@ -118,6 +124,7 @@ int main()
     int height = rect.bottom - rect.top;
 
     DXGICaptureRgb32ToYuv(width, height);
+    YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
 
     return 0;
 }

@@ -109,6 +109,7 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
                 RELEASE_OBJECT(pDesktopResource);
             }
             hr = m_pDXGIOutputDuplication->ReleaseFrame();
+            return false;
         }
         else {
             return false;
