@@ -109,7 +109,6 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
                 RELEASE_OBJECT(pDesktopResource);
             }
             hr = m_pDXGIOutputDuplication->ReleaseFrame();
-            return false;
         }
         else {
             return false;
@@ -117,47 +116,64 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
     }
 
     //Query next frame staging buffer 查询下一帧暂存缓冲区
-    ID3D11Texture2D* pDX11Texture = nullptr;
-    hr = pDesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pDX11Texture));
-    RELEASE_OBJECT(pDesktopResource);
-    if (FAILED(hr)) {
-        return false;
+    if (m_pDX11Texture)
+    {
+        RELEASE_OBJECT(m_pDX11Texture);
+    }
+
+    if (pDesktopResource) {
+        hr = pDesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&m_pDX11Texture));
+        RELEASE_OBJECT(pDesktopResource);
+        if (FAILED(hr)) {
+            return false;
+        }
     }
 
     //Copy old description 复制旧描述
     D3D11_TEXTURE2D_DESC frameDescriptor;
-    pDX11Texture->GetDesc(&frameDescriptor);
-
-    //Create a new staging buffer for fill frame image 为填充帧图像创建一个新的暂存缓冲区
-    frameDescriptor.MipLevels = 1;
-    frameDescriptor.ArraySize = 1;
-    frameDescriptor.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    frameDescriptor.SampleDesc.Count = 1;
-    frameDescriptor.SampleDesc.Quality = 0;
-    frameDescriptor.Usage = D3D11_USAGE_STAGING;
-    frameDescriptor.BindFlags = 0;
-    frameDescriptor.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    frameDescriptor.MiscFlags = 0;
-
-    ID3D11Texture2D* pCopyBuffer = nullptr;
-    hr = m_pDX11Device->CreateTexture2D(&frameDescriptor, nullptr, &pCopyBuffer);
-    if (FAILED(hr)) {
-        RELEASE_OBJECT(pDX11Texture);
-        m_pDXGIOutputDuplication->ReleaseFrame();
+    if (m_pDX11Texture) {
+        m_pDX11Texture->GetDesc(&frameDescriptor);
+    }
+    else if (m_pCopyBuffer) {
+        m_pCopyBuffer->GetDesc(&frameDescriptor);
+    }
+    else {
         return false;
     }
 
+    //Create a new staging buffer for fill frame image 为填充帧图像创建一个新的暂存缓冲区
+    if (m_pCopyBuffer == nullptr) {
+        D3D11_TEXTURE2D_DESC copyBufferDesc;
+        copyBufferDesc.Width = frameDescriptor.Width;
+        copyBufferDesc.Height = frameDescriptor.Height;
+        copyBufferDesc.MipLevels = 1;
+        copyBufferDesc.ArraySize = 1;
+        copyBufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        copyBufferDesc.SampleDesc.Count = 1;
+        copyBufferDesc.SampleDesc.Quality = 0;
+        copyBufferDesc.Usage = D3D11_USAGE_STAGING;
+        copyBufferDesc.BindFlags = 0;
+        copyBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        copyBufferDesc.MiscFlags = 0;
+
+        hr = m_pDX11Device->CreateTexture2D(&copyBufferDesc, nullptr, &m_pCopyBuffer);
+        if (FAILED(hr)) {
+            RELEASE_OBJECT(m_pDX11Texture);
+            m_pDXGIOutputDuplication->ReleaseFrame();
+            return false;
+        }
+    }    
+
     //Copy next staging buffer to new staging buffer 将下一个暂存缓冲区复制到新的暂存缓冲区
-    if (pDX11Texture) {
-        m_pDX11DeviceContext->CopyResource(pCopyBuffer, pDX11Texture);
-        RELEASE_OBJECT(pDX11Texture);
+    if (m_pDX11Texture) {
+        m_pDX11DeviceContext->CopyResource(m_pCopyBuffer, m_pDX11Texture);
+        RELEASE_OBJECT(m_pDX11Texture);
         m_pDXGIOutputDuplication->ReleaseFrame();
     }
 
     //Create staging buffer for map bits 为映射位创建暂存缓冲区
     IDXGISurface* CopySurface = nullptr;
-    hr = pCopyBuffer->QueryInterface(__uuidof(IDXGISurface), (void**)&CopySurface);
-    RELEASE_OBJECT(pCopyBuffer);
+    hr = m_pCopyBuffer->QueryInterface(__uuidof(IDXGISurface), (void**)&CopySurface);
     if (FAILED(hr)) {
         return false;
     }
@@ -171,6 +187,10 @@ bool DXGICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSiz
         CopySurface->Unmap();
     }
     RELEASE_OBJECT(CopySurface);
+
+    if (m_pDXGIOutputDuplication) {
+        m_pDXGIOutputDuplication->ReleaseFrame();
+    }
 
     return true;
 }

@@ -17,7 +17,7 @@ void CaptureRgb24(int width, int height)
 {
     int rgb24Size = width * height * 3;
     unsigned char* rgbBuffer = new unsigned char[rgb24Size];
-    if (GDICapture::CaptureRgb24(&rgbBuffer, rgb24Size)) 
+    if (GDICapture::CaptureRgb24(&rgbBuffer, rgb24Size))
     {
         SaveFile("GDIScreen24.rgb", rgbBuffer, rgb24Size);
 
@@ -45,7 +45,7 @@ void CaptureRgb32(int width, int height)
     if (GDICapture::CaptureRgb32(&rgbBuffer, rgb32Size))
     {
         SaveFile("GDIScreen32.rgb", rgbBuffer, rgb32Size);
-        
+
         unsigned char* bmpBuffer = nullptr;
         int bmpSize = Convert::Rgb32ToBmp(rgbBuffer, width, height, &bmpBuffer);
         if (bmpSize > 0) {
@@ -66,7 +66,7 @@ void DXGICaptureRgb32(int width, int height)
     unsigned char* yuvBuffer = new unsigned char[yuv420Size];
 
     DXGICapture capture;
-    for (int i = 0; i < 3; i++) 
+    for (int i = 0; i < 3; i++)
     {
         if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
             char picName[128] = { 0 };
@@ -93,19 +93,22 @@ void DXGICaptureRgb32ToYuv(int width, int height)
 {
     int rgb32Size = width * height * 4;
     unsigned char* rgbBuffer = new unsigned char[rgb32Size];
-    int yuv420Size = width * height * 3 / 2; 
+    int yuv420Size = width * height * 3 / 2;
     unsigned char* yuvBuffer = new unsigned char[yuv420Size];
 
     DXGICapture capture;
     for (int i = 0; i < 100; i++)
     {
+        std::cout << i << std::endl;
         if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
             if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
                 SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
             }
         }
-        std::cout << "---------------";
-        Sleep(50);
+        else {
+            std::cout << "---------------" << i << std::endl;
+        }
+        Sleep(25);
     }
 }
 
@@ -124,7 +127,7 @@ int main()
     int height = rect.bottom - rect.top;
 
     DXGICaptureRgb32ToYuv(width, height);
-    YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
+    //YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
 
     return 0;
 }
