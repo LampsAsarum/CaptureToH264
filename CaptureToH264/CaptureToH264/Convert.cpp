@@ -215,7 +215,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     pParam->i_fps_den = 1;                            // 帧率的分母
     pParam->i_timebase_num = pParam->i_fps_den;       // 时间基的分子
     pParam->i_timebase_den = pParam->i_fps_num;       // 时间基的分母
-    x264_param_apply_profile(pParam, x264_profile_names[5]);
+    x264_param_apply_profile(pParam, x264_profile_names[1]); // 设置编码的profile, 支持的profile在x264_profile_names中
 
     x264_t* pHandle = x264_encoder_open(pParam);//打开编码器
     x264_nal_t* pNals = NULL;//存储压缩编码后的码流数据

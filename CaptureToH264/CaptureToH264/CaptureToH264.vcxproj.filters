@@ -27,6 +27,9 @@
     <ClCompile Include="DXGICapture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="X264Encoder.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GDICapture.h">
@@ -36,6 +39,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DXGICapture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="X264Encoder.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -137,11 +137,13 @@
     <ClCompile Include="DXGICapture.cpp" />
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="X264Encoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Convert.h" />
     <ClInclude Include="DXGICapture.h" />
     <ClInclude Include="GDICapture.h" />
+    <ClInclude Include="X264Encoder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

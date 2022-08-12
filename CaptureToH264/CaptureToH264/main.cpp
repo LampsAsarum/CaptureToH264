@@ -3,6 +3,7 @@
 #include "GDICapture.h"
 #include "DXGICapture.h"
 #include "Convert.h"
+#include "X264Encoder.h"
 
 void SaveFile(const char* fileName, unsigned char* buf, int size)
 {
@@ -89,7 +90,7 @@ void DXGICaptureRgb32(int width, int height)
     }
 }
 
-void DXGICaptureRgb32ToYuv(int width, int height)
+void DXGICaptureRgb32ToYuvToH264(int width, int height)
 {
     int rgb32Size = width * height * 4;
     unsigned char* rgbBuffer = new unsigned char[rgb32Size];
@@ -97,16 +98,23 @@ void DXGICaptureRgb32ToYuv(int width, int height)
     unsigned char* yuvBuffer = new unsigned char[yuv420Size];
 
     DXGICapture capture;
-    for (int i = 0; i < 100; i++)
+    X264Encoder encoder(width, height);
+    for (int i = 0; i < 500; i++)
     {
         std::cout << i << std::endl;
         if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
             if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
                 SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
+
+                uint8_t* out_data[8]{ 0 };
+                size_t out_linesize[8]{ 0 };
+                BYTE* plane[3]{ yuvBuffer, yuvBuffer + width * height, yuvBuffer + width * height * 5 / 4};
+                bool bKeyFrame = i == 0 ? true : false;
+                encoder.EncodeFrame(plane, out_data, out_linesize, bKeyFrame);
+                for (int i = 0; out_data[i]; i++) {
+                    SaveFile("DXGIScreen.h264", out_data[i], out_linesize[i]);
+                }
             }
-        }
-        else {
-            std::cout << "---------------" << i << std::endl;
         }
         Sleep(25);
     }
@@ -126,7 +134,7 @@ int main()
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    DXGICaptureRgb32ToYuv(width, height);
+    DXGICaptureRgb32ToYuvToH264(width, height);
     //YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
 
     return 0;

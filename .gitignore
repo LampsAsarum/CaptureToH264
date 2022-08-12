@@ -9,5 +9,6 @@
 *.rgb
 *.bmp
 *.yuv
+*.h264
 Debug
 Release
