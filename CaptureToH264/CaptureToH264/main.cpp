@@ -103,8 +103,13 @@ void DXGICaptureRgb32ToYuvToH264(int width, int height)
     {
         std::cout << i << std::endl;
         if (capture.CaptureRgb32(&rgbBuffer, rgb32Size)) {
+            if (i == 1) {
+            SaveFile("DXGIScreen.rgb", rgbBuffer, rgb32Size);
+            }
             if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, &yuvBuffer, yuv420Size)) {
-                SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
+                if (i == 1) {
+                    SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
+                }
 
                 uint8_t* out_data[8]{ 0 };
                 size_t out_linesize[8]{ 0 };

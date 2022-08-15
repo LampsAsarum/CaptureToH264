@@ -7,68 +7,34 @@ X264Encoder::X264Encoder(int width, int height)
 
     x264_param_t x264Param;
     x264_param_default(&x264Param);
-
     x264_param_default_preset(&x264Param, "ultrafast", "zerolatency");
 
-    x264Param.i_threads = X264_SYNC_LOOKAHEAD_AUTO;
-    x264Param.i_width = width;
-    x264Param.i_height = height;
-    x264Param.i_csp = X264_CSP_I420;
-    x264Param.i_fps_num = 40;
-    x264Param.i_fps_den = 1;
-    x264Param.i_timebase_num = x264Param.i_fps_num;
-    x264Param.i_timebase_den = x264Param.i_fps_den;
-
-    x264Param.i_bframe = 0;
-    x264Param.i_bframe_adaptive = 0;
-    /*x264Param.b_open_gop = 0;
-    x264Param.i_bframe_pyramid = 0;
-    x264Param.i_bframe_adaptive = X264_B_ADAPT_TRELLIS;*/
-
+    x264Param.i_threads = X264_SYNC_LOOKAHEAD_AUTO;     // 并行编码多帧; 线程数，为0则自动多线程编码
+    x264Param.i_width = width;                          // 视频图像的宽
+    x264Param.i_height = height;                        // 视频图像的高
+    x264Param.i_csp = X264_CSP_I420;                    // 编码比特流的CSP
+    x264Param.i_fps_num = 25;                           // 帧率的分子
+    x264Param.i_fps_den = 1;                            // 帧率的分母
+    x264Param.i_timebase_num = x264Param.i_fps_den;     // 时间基的分子
+    x264Param.i_timebase_den = x264Param.i_fps_num;     // 时间基的分母
+    x264Param.i_bframe = 0;                             // 两个参考帧之间的B帧数目
     x264Param.i_keyint_min = X264_KEYINT_MIN_AUTO;
-    x264Param.i_keyint_max = X264_KEYINT_MAX_INFINITE;
-    /*x264Param.b_repeat_headers = 1;
-    x264Param.b_vfr_input = 0;
-    x264Param.i_frame_reference = 6;
-    x264Param.i_scenecut_threshold = 0;
-    x264Param.b_deblocking_filter = 0;
-    x264Param.b_cabac = 0;*/
+    x264Param.i_keyint_max = X264_KEYINT_MAX_INFINITE;  // 设定IDR帧之间的最大间隔，在此间隔设置IDR关键帧
+    x264Param.rc.i_rc_method = X264_RC_ABR;             // 码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
+    x264Param.rc.i_bitrate = 2 * width * height * 3 / 8 / 1024;
+    x264Param.i_log_level = X264_LOG_NONE;
 
-    x264Param.analyse.b_fast_pskip = 1;
-    /*x264Param.analyse.intra = 0;
-    x264Param.analyse.inter = 0;
-    x264Param.analyse.i_me_method = X264_ME_DIA;
-    x264Param.analyse.b_transform_8x8 = 0;
-    x264Param.analyse.i_weighted_pred = X264_WEIGHTP_NONE;
-    x264Param.analyse.b_weighted_bipred = 0;
-    x264Param.analyse.i_subpel_refine = 0;
-    x264Param.analyse.b_mixed_references = 0;
-    x264Param.analyse.i_trellis = 0;
-    x264Param.i_bframe_adaptive = X264_B_ADAPT_NONE;*/
-    //rate control params
-    int bitrate = width * height * 3 * 2.0 / 8 / 1024 * (x264Param.i_avcintra_class ? 8 : 10);
-    x264Param.rc.i_rc_method = X264_RC_ABR;
-    x264Param.rc.i_bitrate = bitrate;
-    x264Param.rc.i_vbv_max_bitrate = bitrate;
-    x264Param.rc.i_vbv_buffer_size = 128 * (x264Param.i_avcintra_class ? 8 : 10);
-    x264Param.rc.b_mb_tree = 0;
-    x264Param.rc.i_lookahead = 0;
-    //x264Param.rc.i_aq_mode = X264_AQ_NONE;
-    x264Param.b_sliced_threads = 1;
-    x264Param.i_sync_lookahead = 0;
+    x264_param_apply_profile(&x264Param, x264_profile_names[1]);
 
-    x264Param.i_log_level = X264_LOG_WARNING;
-
-    x264_param_apply_profile(&x264Param, "main");
-
-    // open encoder
     m_pHandle = x264_encoder_open(&x264Param);
 
     x264_picture_init(&m_pic_in);
-    m_pic_in.img.i_csp = X264_CSP_I420;
+    /*m_pic_in.img.i_csp = X264_CSP_I420;
     m_pic_in.img.i_stride[0] = width;
     m_pic_in.img.i_stride[1] = width / 2;
-    m_pic_in.img.i_stride[2] = width / 2;
+    m_pic_in.img.i_stride[2] = width / 2;*/
+
+    x264_picture_alloc(&m_pic_in, X264_CSP_I420, width, height);//为图像结构体x264_picture_t分配内存
 }
 
 X264Encoder::~X264Encoder()

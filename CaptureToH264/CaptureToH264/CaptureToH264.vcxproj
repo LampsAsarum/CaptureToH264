@@ -84,6 +84,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)3thLibrary\libyuv\lib\$(Configuration);$(SolutionDir)3thLibrary\libx264\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>yuv.lib;libx264.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>./clear.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
