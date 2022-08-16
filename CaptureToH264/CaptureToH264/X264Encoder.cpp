@@ -45,9 +45,9 @@ bool X264Encoder::EncodeFrame(uint8_t* in_buf[3], uint8_t* out_ppData[8], size_t
 {
     if (in_buf != NULL) {//encode
         m_pic_in.i_type = in_forceKey ? X264_TYPE_IDR : X264_TYPE_AUTO;
-        m_pic_in.img.plane[0] = in_buf[0];
-        m_pic_in.img.plane[1] = in_buf[1];
-        m_pic_in.img.plane[2] = in_buf[2];
+        m_pic_in.img.plane[0] = in_buf[0]; // 缓存 Y分量 数据
+        m_pic_in.img.plane[1] = in_buf[1]; // 缓存 U分量 数据
+        m_pic_in.img.plane[2] = in_buf[2]; // 缓存 V分量 数据
         return Encode(&m_pic_in, out_ppData, out_linesize);
     }
     return Encode(NULL, out_ppData, out_linesize);
@@ -63,33 +63,41 @@ bool X264Encoder::Encode(x264_picture_t* pic_in, uint8_t* out_ppData[8], size_t 
         return false;
     }
 
-    if (pic_in != NULL) {//encode
-        int num = 0;
-        x264_nal_t* nals;
-        x264_picture_t pic_out;
+    if (pic_in != NULL) //encode
+    {
+        int num = 0; // nals的数量
+        x264_nal_t* nals; // NAL数据包
+        x264_picture_t pic_out; // 编码后输出帧
+
+        // x264_encoder_encode 编码一帧图像
         if (x264_encoder_encode(m_pHandle, &nals, &num, &m_pic_in, &pic_out) < 0) {
             return false;
         }
 
         int index = 0;
-        for (x264_nal_t* nal = nals; nal < nals + num; ++nal, ++index) {
+        for (x264_nal_t* nal = nals; nal < nals + num; ++nal, ++index) 
+        {
             out_linesize[index] = nal->i_payload;
-            if (out_linesize[index] > 0) {
+            if (out_linesize[index] > 0) 
+            {
                 out_ppData[index] = new uint8_t[out_linesize[index]];
                 memcpy_s(out_ppData[index], out_linesize[index], nal->p_payload, nal->i_payload);
             }
         }
         out_ppData[index] = nullptr;
     }
-    else {//flush
-        int i_nal;
-        int index = 0;
+    else //flush
+    {
+        int num = 0;
         x264_nal_t* nal;
         x264_picture_t pic_out;
-        for (; x264_encoder_delayed_frames(m_pHandle) >= 1 && index < 8; ++index) {
-            // nals bitstream is sequential in memory
-            int frame_size = x264_encoder_encode(m_pHandle, &nal, &i_nal, NULL, &pic_out);
-            if (frame_size == 0) {
+
+        // x264_encoder_delayed_frames 输出编码器中缓存的数据
+        for (int index = 0; x264_encoder_delayed_frames(m_pHandle) >= 1 && index < 8; ++index) 
+        {
+            int frame_size = x264_encoder_encode(m_pHandle, &nal, &num, NULL, &pic_out);
+            if (frame_size == 0) 
+            {
                 if (index == 0) {
                     return false;
                 }
@@ -98,7 +106,8 @@ bool X264Encoder::Encode(x264_picture_t* pic_in, uint8_t* out_ppData[8], size_t 
                     return true;
                 }
             }
-            else {
+            else 
+            {
                 out_linesize[index] = frame_size;
                 if (out_linesize[index] > 0) {
                     out_ppData[index] = new uint8_t[out_linesize[index]];
