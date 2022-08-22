@@ -1,8 +1,6 @@
 #include "Convert.h"
 #include <Windows.h>
 #include "libyuv/convert_from_argb.h"
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -56,9 +54,12 @@ typedef  struct  tagBITMAPINFOHEADER
 参考链接：https://www.freesion.com/article/1054806317/
 */
 
-int Convert::Rgb24ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char** bmpBuf)
+bool Convert::Rgb24ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char* bmpBuf, const int bmpBufferSize)
 {
-    int rgb24Size = width * height * 3 * sizeof(char);
+    int rgb24Size = width * height * 3;
+    if (bmpBufferSize < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size) {
+        return false;
+    }
 
     BITMAPFILEHEADER bfh;
     bfh.bfType = (WORD)0x4d42;
@@ -80,18 +81,21 @@ int Convert::Rgb24ToBmp(unsigned char* rgbBuf, const int width, const int height
     bih.biClrUsed = 0;
     bih.biClrImportant = 0;
 
-    int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size;
-    *bmpBuf = new unsigned char[bmpSize];
-    memcpy(*bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
-    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
-    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb24Size);
+    memset(bmpBuf, 0, sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb24Size);
 
-    return bmpSize;
+    memcpy(bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
+    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
+    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb24Size);
+
+    return true;
 }
 
-int Convert::Rgb32ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char** bmpBuf)
+bool Convert::Rgb32ToBmp(unsigned char* rgbBuf, const int width, const int height, unsigned char* bmpBuf, const int bmpBufferSize)
 {
-    int rgb32Size = width * height * 4 * sizeof(char);
+    int rgb32Size = width * height * 4;
+    if (bmpBufferSize < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size) {
+        return false;
+    }
 
     BITMAPFILEHEADER bfh;
     bfh.bfType = (WORD)0x4d42;
@@ -113,23 +117,28 @@ int Convert::Rgb32ToBmp(unsigned char* rgbBuf, const int width, const int height
     bih.biClrUsed = 0;
     bih.biClrImportant = 0;
 
-    int bmpSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size;
-    *bmpBuf = new unsigned char[bmpSize];
-    memcpy(*bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
-    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
-    memcpy(*bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb32Size);
+    memset(bmpBuf, 0, sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + rgb32Size);
 
-    return bmpSize;
+    memcpy(bmpBuf, &bfh, sizeof(BITMAPFILEHEADER));
+    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER), &bih, sizeof(BITMAPINFOHEADER));
+    memcpy(bmpBuf + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), rgbBuf, rgb32Size);
+
+    return true;
 }
 
-int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char* yuvBuf)
+bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char* yuvBuf, const int yuvBufferSize)
 {
-    unsigned char* ptrY, * ptrU, * ptrV, * ptrRGB;
+    if (yuvBufferSize < width * height * 3 / 2) {
+        return false;
+    }
+
     memset(yuvBuf, 0, width * height * 3 / 2);
-    ptrY = yuvBuf;
-    ptrU = yuvBuf + width * height;
-    ptrV = ptrU + (width * height * 1 / 4);
+    unsigned char* ptrY = yuvBuf;
+    unsigned char* ptrU = yuvBuf + width * height;
+    unsigned char* ptrV = ptrU + (width * height * 1 / 4);
+
     unsigned char y, u, v, r, g, b;
+    unsigned char* ptrRGB;
     for (int j = 0; j < height; j++)
     {
         ptrRGB = rgbBuf + width * j * 3;
@@ -158,12 +167,14 @@ int Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int hei
 }
 
 // YUV420p：每4个 Y分量 共用一组 UV分量，前面全是Y分量，后面是U分量，再后面是V分量
-bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char** yuvBuf, const int yuvBufferSize)
+bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char* yuvBuf, const int yuvBufferSize)
 {
     // Ysize:(width*height); Usize:(width*height)/2; Vsize:(width*height)/2;
     if (yuvBufferSize < width * height * 3 / 2) {
         return false;
     }
+
+    memset(yuvBuf, 0, width * height * 3 / 2);
 
     const int yStride = width;
     const int uvStride = (width + 1) / 2;
@@ -171,8 +182,8 @@ bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int he
     const int yLength = width * height;
     const int uvLength = uvStride * ((height + 1) / 2);
 
-    unsigned char* yDataDstPtr = *yuvBuf;
-    unsigned char* uDataDstPtr = *yuvBuf + yLength;
+    unsigned char* yDataDstPtr = yuvBuf;
+    unsigned char* uDataDstPtr = yuvBuf + yLength;
     unsigned char* vDataDstPtr = uDataDstPtr + uvLength;
 
     libyuv::ARGBToI420(rgbBuf, width * 4,// 带转换的argb数据；argb数据每一行的大小
@@ -190,7 +201,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     FILE* fp_dst = fopen(h264FilePath.c_str(), "wb");
     if (fp_src == NULL || fp_dst == NULL) {
         printf("Error open files.\n");
-        return -1;
+        return false;
     }
 
     int csp = X264_CSP_I420;
@@ -245,7 +256,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     }
     default:
         printf("Colorspace Not Support.\n");
-        return -1;
+        return false;
     }
     fseek(fp_src, 0, SEEK_SET);
 
@@ -266,14 +277,14 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
             break;
         default:
             printf("Colorspace Not Support.\n");
-            return -1;
+            return false;
         }
         pPic_in->i_pts = i;
 
         ret = x264_encoder_encode(pHandle, &pNals, &iNal, pPic_in, pPic_out);//编码一帧图像
         if (ret < 0) {
             printf("Error.\n");
-            return -1;
+            return false;
         }
 
         printf("Succeed encode frame: %5d\n", i);

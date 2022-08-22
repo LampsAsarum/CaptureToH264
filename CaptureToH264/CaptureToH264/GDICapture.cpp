@@ -3,7 +3,7 @@
 
 // API介绍：https://blog.csdn.net/zjy1175044232/article/details/111476009
 
-bool GDICapture::CaptureRgb24(unsigned char** rgbBuffer, const int rgbBufferSize)
+bool GDICapture::CaptureRgb24(unsigned char* rgbBuffer, const int rgbBufferSize)
 {
     HDC hdcScreen = GetDC(HWND_DESKTOP); //获取桌面DC
     //DC就是设备上下文，就是当前的这个窗体的一些属性，例如使用的位图、画笔、画刷等
@@ -30,7 +30,7 @@ bool GDICapture::CaptureRgb24(unsigned char** rgbBuffer, const int rgbBufferSize
     SelectObject(hdcMemory, hBitmap);//为标识的设备环境hdcMemory选择一个对象hBitmap
     BitBlt(hdcMemory, 0, 0, width, height, hdcScreen, 0, 0, SRCCOPY); //将hdcScreen的位图复制到hdcMemory
 
-    GetDIBits(hdcMemory, hBitmap, 0, height, *rgbBuffer, (BITMAPINFO*)&bih, DIB_RGB_COLORS);
+    GetDIBits(hdcMemory, hBitmap, 0, height, rgbBuffer, (BITMAPINFO*)&bih, DIB_RGB_COLORS);
 
     ReleaseDC(HWND_DESKTOP, hdcMemory);
     DeleteDC(hdcMemory);
@@ -40,7 +40,7 @@ bool GDICapture::CaptureRgb24(unsigned char** rgbBuffer, const int rgbBufferSize
     return true;
 }
 
-bool GDICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize)
+bool GDICapture::CaptureRgb32(unsigned char* rgbBuffer, const int rgbBufferSize)
 {
     HDC hdcScreen = GetDC(HWND_DESKTOP);
     int width = GetDeviceCaps(hdcScreen, HORZRES);
@@ -57,7 +57,7 @@ bool GDICapture::CaptureRgb32(unsigned char** rgbBuffer, const int rgbBufferSize
     SelectObject(hdcMemory, bitmap);
     BitBlt(hdcMemory, 0, 0, width, height, hdcScreen, 0, 0, SRCCOPY);
     
-    GetBitmapBits(bitmap, rgb32Size, *rgbBuffer);
+    GetBitmapBits(bitmap, rgb32Size, rgbBuffer);
     
     ReleaseDC(HWND_DESKTOP, hdcMemory);
     DeleteDC(hdcMemory);
