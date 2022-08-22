@@ -55,5 +55,15 @@ public:
     /// <param name="height">视频高度</param>
     /// <returns>成功返回true，失败返回false</returns>
     static bool YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, int height);
+    
+    /// <summary>
+    /// H264文件转Yuv420文件
+    /// </summary>
+    /// <param name="h264FilePath">H264文件路径</param>
+    /// <param name="yuvFilePath">YUV文件路径</param>
+    /// <param name="width">视频宽度</param>
+    /// <param name="height">视频高度</param>
+    /// <returns>成功返回true，失败返回false</returns>
+    static bool H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height);
 };
 

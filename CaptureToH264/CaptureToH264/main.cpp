@@ -107,7 +107,7 @@ void DXGICaptureRgb32ToYuvToH264(int width, int height)
 
     DXGICapture capture;
     X264Encoder encoder(width, height);
-    for (int i = 0; i < 500; i++)
+    for (int i = 0; i < 100; i++)
     {
         std::cout << i << std::endl;
         if (capture.CaptureRgb32(rgbBuffer, rgb32Size)) {
@@ -138,6 +138,11 @@ void YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, 
     Convert::YUV420ToH264(yuvFilePath, h264FilePath, width, height);
 }
 
+void H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height)
+{
+    Convert::H264ToYUV420(h264FilePath, yuvFilePath, width, height);
+}
+
 int main()
 {
     RECT rect;
@@ -147,12 +152,13 @@ int main()
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-
-    CaptureRgb24(width, height);
-    CaptureRgb32(width, height);
+    //CaptureRgb24(width, height);
+    //CaptureRgb32(width, height);
 
     //DXGICaptureRgb32ToYuvToH264(width, height);
+
     //YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
+    H264ToYUV420("DXGIScreen.h264", "DXGIScreen.yuv", width, height);
 
     return 0;
 }

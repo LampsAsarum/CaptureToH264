@@ -8,6 +8,7 @@
 extern "C"
 {
 #include "x264.h"
+#include "libavcodec/avcodec.h"
 };
 
 #pragma warning(disable:4996)
@@ -197,9 +198,9 @@ bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int he
 
 bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, int height)
 {
-    FILE* fp_src = fopen(yuvFilePath.c_str(), "rb");
-    FILE* fp_dst = fopen(h264FilePath.c_str(), "wb");
-    if (fp_src == NULL || fp_dst == NULL) {
+    FILE* fp_in = fopen(yuvFilePath.c_str(), "rb");
+    FILE* fp_out = fopen(h264FilePath.c_str(), "wb");
+    if (fp_in == NULL || fp_out == NULL) {
         printf("Error open files.\n");
         return false;
     }
@@ -242,23 +243,23 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     int y_size = pParam->i_width * pParam->i_height;
 
     int frame_num = 0;
-    fseek(fp_src, 0, SEEK_END);
+    fseek(fp_in, 0, SEEK_END);
     switch (csp)
     {
     case X264_CSP_I444:
-        frame_num = ftell(fp_src) / (y_size * 3);
+        frame_num = ftell(fp_in) / (y_size * 3);
         break;
     case X264_CSP_I420: {
-        int a = ftell(fp_src);
+        int a = ftell(fp_in);
         int b = (y_size * 3 / 2);
-        frame_num = ftell(fp_src) / (y_size * 3 / 2);
+        frame_num = ftell(fp_in) / (y_size * 3 / 2);
         break;
     }
     default:
         printf("Colorspace Not Support.\n");
         return false;
     }
-    fseek(fp_src, 0, SEEK_SET);
+    fseek(fp_in, 0, SEEK_SET);
 
     //Loop to Encode
     for (int i = 0; i < frame_num; i++)
@@ -266,14 +267,14 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
         switch (csp)
         {
         case X264_CSP_I444:
-            fread(pPic_in->img.plane[0], y_size, 1, fp_src);	//Y
-            fread(pPic_in->img.plane[1], y_size, 1, fp_src);	//U
-            fread(pPic_in->img.plane[2], y_size, 1, fp_src);	//V
+            fread(pPic_in->img.plane[0], y_size, 1, fp_in);	//Y
+            fread(pPic_in->img.plane[1], y_size, 1, fp_in);	//U
+            fread(pPic_in->img.plane[2], y_size, 1, fp_in);	//V
             break;
         case X264_CSP_I420:
-            fread(pPic_in->img.plane[0], y_size, 1,     fp_src);	//Y
-            fread(pPic_in->img.plane[1], y_size / 4, 1, fp_src);	//U
-            fread(pPic_in->img.plane[2], y_size / 4, 1, fp_src);	//V
+            fread(pPic_in->img.plane[0], y_size, 1,     fp_in);	//Y
+            fread(pPic_in->img.plane[1], y_size / 4, 1, fp_in);	//U
+            fread(pPic_in->img.plane[2], y_size / 4, 1, fp_in);	//V
             break;
         default:
             printf("Colorspace Not Support.\n");
@@ -290,7 +291,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
         printf("Succeed encode frame: %5d\n", i);
 
         for (int j = 0; j < iNal; ++j) {
-            fwrite(pNals[j].p_payload, 1, pNals[j].i_payload, fp_dst);
+            fwrite(pNals[j].p_payload, 1, pNals[j].i_payload, fp_out);
         }
     }
 
@@ -304,7 +305,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
         }
         printf("Flush 1 frame.\n");
         for (int j = 0; j < iNal; ++j) {
-            fwrite(pNals[j].p_payload, 1, pNals[j].i_payload, fp_dst);
+            fwrite(pNals[j].p_payload, 1, pNals[j].i_payload, fp_out);
         }
         i++;
     }
@@ -317,8 +318,159 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     free(pPic_out);
     free(pParam);
 
-    fclose(fp_src);
-    fclose(fp_dst);
+    fclose(fp_in);
+    fclose(fp_out);
+
+    return true;
+}
+
+bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height)
+{
+    FILE* fp_in = fopen(h264FilePath.c_str(), "rb");
+    FILE* fp_out = fopen(yuvFilePath.c_str(), "wb");
+    if (fp_in == NULL || fp_out == NULL) {
+        printf("Error open files.\n");
+        return false;
+    }
+
+    avcodec_register_all(); //注册所有的编解码器。
+    //只注册编解码器有关的组件。比如说编码器、解码器、比特流滤镜等，但是不注册复用/解复用器这些和编解码器无关的组件。
+
+    AVCodec* pCodec = avcodec_find_decoder(AV_CODEC_ID_H264); //查找解码器
+    if (!pCodec) {
+        printf("Codec not found\n");
+        return false;
+    }
+    AVCodecContext* pCodecCtx = avcodec_alloc_context3(pCodec); //为AVCodecContext分配内存
+    if (!pCodecCtx) {
+        printf("Could not allocate video codec context\n");
+        return false;
+    }
+
+    AVCodecParserContext* pCodecParserCtx = av_parser_init(AV_CODEC_ID_H264); //初始化AVCodecParserContext
+    if (!pCodecParserCtx) {
+        printf("Could not allocate video parser context\n");
+        return false;
+    }
+
+    if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) { //打开解码器
+        printf("Could not open codec\n");
+        return false;
+    }
+    
+
+    AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
+    AVPacket packet; // 存储一帧（一般情况下）压缩编码数据
+    av_init_packet(&packet);
+
+    const int in_buffer_size = 4096;
+    unsigned char in_buffer[in_buffer_size + FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
+    unsigned char* cur_ptr;
+    int cur_size;
+    int ret, got_picture;
+
+    int first_time = 1;
+    while (true)
+    {
+        cur_size = fread(in_buffer, 1, in_buffer_size, fp_in);
+        if (cur_size == 0)
+            break;
+        cur_ptr = in_buffer;
+
+        while (cur_size > 0)
+        {
+            //使用AVCodecParser从输入的数据流中分离出一帧一帧的压缩编码数据。
+            int len = av_parser_parse2( // 解析获得一个Packet
+                pCodecParserCtx, pCodecCtx,
+                &packet.data, &packet.size,
+                cur_ptr, cur_size,
+                AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
+
+            cur_ptr += len;
+            cur_size -= len;
+
+            if (packet.size == 0)
+                continue;
+
+            //Some Info from AVCodecParserContext
+            printf("[Packet]Size:%6d\t", packet.size);
+
+            switch (pCodecParserCtx->pict_type) {
+            case AV_PICTURE_TYPE_I: printf("Type:I\t"); break;
+            case AV_PICTURE_TYPE_P: printf("Type:P\t"); break;
+            case AV_PICTURE_TYPE_B: printf("Type:B\t"); break;
+            default: printf("Type:Other\t"); break;
+            }
+
+            printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
+
+            ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, &packet); //解码一帧数据
+            if (ret < 0) {
+                printf("Decode Error.\n");
+                return false;
+            }
+
+            if (got_picture)
+            {
+                if (first_time) {
+                    printf("\nCodec Full Name:%s\n", pCodecCtx->codec->long_name);
+                    printf("width:%d\nheight:%d\n\n", pCodecCtx->width, pCodecCtx->height);
+                    first_time = 0;
+                }
+                //Y, U, V
+                for (int i = 0; i < pFrame->height; i++) {
+                    fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+                }
+                for (int i = 0; i < pFrame->height / 2; i++) {
+                    fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+                }
+                for (int i = 0; i < pFrame->height / 2; i++) {
+                    fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+                }
+
+                printf("Succeed to decode 1 frame!\n");
+            }
+        }
+
+    }
+
+    //Flush Decoder
+    packet.data = NULL;
+    packet.size = 0;
+    while (1)
+    {
+        ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, &packet); //解码一帧数据
+        if (ret < 0) {
+            printf("Decode Error.\n");
+            return false;
+        }
+        if (!got_picture) {
+            break;
+        }
+        else {
+            //Y, U, V
+            for (int i = 0; i < pFrame->height; i++) {
+                fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+            }
+
+            printf("Flush Decoder: Succeed to decode 1 frame!\n");
+        }
+    }
+
+    fclose(fp_in);
+    fclose(fp_out);
+
+    av_parser_close(pCodecParserCtx);
+
+    av_frame_free(&pFrame);
+    avcodec_close(pCodecCtx);
+    av_free(pCodecCtx);
 
     return true;
 }
