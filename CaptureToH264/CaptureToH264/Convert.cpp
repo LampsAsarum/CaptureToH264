@@ -360,8 +360,9 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
     
 
     AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
-    AVPacket packet; // 存储一帧（一般情况下）压缩编码数据
-    av_init_packet(&packet);
+    AVPacket* packet = av_packet_alloc(); // 存储一帧（一般情况下）压缩编码数据
+    //AVPacket packet; 两种初始化方式，都可以
+    //av_init_packet(&packet);
 
     const int in_buffer_size = 4096;
     unsigned char in_buffer[in_buffer_size + FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
@@ -382,18 +383,18 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
             //使用AVCodecParser从输入的数据流中分离出一帧一帧的压缩编码数据。
             int len = av_parser_parse2( // 解析获得一个Packet
                 pCodecParserCtx, pCodecCtx,
-                &packet.data, &packet.size,
+                &packet->data, &packet->size,
                 cur_ptr, cur_size,
                 AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
 
             cur_ptr += len;
             cur_size -= len;
 
-            if (packet.size == 0)
+            if (packet->size == 0)
                 continue;
 
             //Some Info from AVCodecParserContext
-            printf("[Packet]Size:%6d\t", packet.size);
+            printf("[Packet]Size:%6d\t", packet->size);
 
             switch (pCodecParserCtx->pict_type) {
             case AV_PICTURE_TYPE_I: printf("Type:I\t"); break;
@@ -404,7 +405,7 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
 
             printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
 
-            ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, &packet); //解码一帧数据
+            ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); //解码一帧数据
             if (ret < 0) {
                 printf("Decode Error.\n");
                 return false;
@@ -435,11 +436,11 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
     }
 
     //Flush Decoder
-    packet.data = NULL;
-    packet.size = 0;
+    packet->data = NULL;
+    packet->size = 0;
     while (1)
     {
-        ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, &packet); //解码一帧数据
+        ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); //解码一帧数据
         if (ret < 0) {
             printf("Decode Error.\n");
             return false;
