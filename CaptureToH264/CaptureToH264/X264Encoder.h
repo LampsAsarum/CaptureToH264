@@ -13,20 +13,13 @@ public:
     X264Encoder(int width, int height);
     ~X264Encoder();
 
-    bool EncodeFrame(
-        uint8_t* in_yuvbuf, const int width, const int height,
-        uint8_t* out_ppData[8],
-        size_t   out_linesize[8],
-        bool in_forceKey);
+    size_t EncodeFrame(uint8_t* inYuvbuf, const int inWidth, const int inHeight, uint8_t** out_ppData, bool in_forceKey);
 
 private:
-    bool Encode(
-        x264_picture_t* pic_in,
-        uint8_t* out_ppData[8],
-        size_t   out_linesize[8]);
+    size_t Encode(x264_picture_t* pic_in, uint8_t** out_ppData);
 
 private:
-    x264_t* m_pHandle;
+    x264_t* m_pX264;
     x264_picture_t m_pic_in;
 };
 

@@ -75,9 +75,6 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
         }
         printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
 
-
-
-
         int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); //解码一帧数据
         if (ret < 0) {
             printf("Decode Error.\n");

@@ -121,13 +121,11 @@ void DXGICaptureRgb32ToYuvToH264(int width, int height)
                     SaveFile("DXGIScreen.yuv", yuvBuffer, yuv420Size);
                 }
 
-                uint8_t* out_data[8]{ 0 };
-                size_t out_linesize[8]{ 0 };
-                BYTE* plane[3]{ yuvBuffer, yuvBuffer + width * height, yuvBuffer + width * height * 5 / 4 };
+                uint8_t* outData = nullptr;
                 bool bKeyFrame = i == 0 ? true : false;
-                encoder.EncodeFrame(yuvBuffer, width, height, out_data, out_linesize, bKeyFrame);
-                for (int i = 0; out_data[i]; i++) {
-                    SaveFile("DXGIScreen.h264", out_data[i], out_linesize[i]);
+                size_t size = encoder.EncodeFrame(yuvBuffer, width, height, &outData, bKeyFrame);
+                if (size != 0) {
+                    SaveFile("DXGIScreen.h264", outData, size);
                 }
             }
         }
@@ -160,25 +158,20 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
     for (int i = 0; i < 100; i++)
     {
         std::cout << i << std::endl;
-        if (capture.CaptureRgb32(rgbBuffer, rgb32Size)) {
-            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuvBuffer, yuv420Size)) {
-
-                unsigned char* out_data[8]{ 0 };
-                unsigned int out_linesize[8]{ 0 };
+        if (capture.CaptureRgb32(rgbBuffer, rgb32Size)) 
+        {
+            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuvBuffer, yuv420Size)) 
+            {
+                uint8_t* outData = nullptr;
                 bool bKeyFrame = i == 0 ? true : false;
-                encoder.EncodeFrame(yuvBuffer, width, height, out_data, out_linesize, bKeyFrame);
+                size_t size = encoder.EncodeFrame(yuvBuffer, width, height, &outData, bKeyFrame);
+                if (size != 0) {
+                    SaveFile("DXGIScreen.h264", outData, size);
+                }
 
-                int leng = 0;
-                for (int i = 0; out_data[i]; i++) {
-                    SaveFile("DXGIScreen.h264", out_data[i], out_linesize[i]);
-                    leng += out_linesize[i];
-                }
-                for (int i = 0; out_data[i]; i++) {
-                    decoder.DecoderFrame(out_data[i], out_linesize[i], nullptr, 20);
-                }
+                //decoder.DecoderFrame(outData, size, nullptr, 20);
             }
         }
-        Sleep(25);
     }
 }
 

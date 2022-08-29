@@ -1,5 +1,6 @@
 #include "X264Encoder.h"
 #include <memory>
+#include <vector>
 
 X264Encoder::X264Encoder(int width, int height)
 {
@@ -26,7 +27,7 @@ X264Encoder::X264Encoder(int width, int height)
 
     x264_param_apply_profile(&x264Param, x264_profile_names[1]);
 
-    m_pHandle = x264_encoder_open(&x264Param);
+    m_pX264 = x264_encoder_open(&x264Param);
 
     x264_picture_init(&m_pic_in);
     /*m_pic_in.img.i_csp = X264_CSP_I420;
@@ -41,81 +42,82 @@ X264Encoder::~X264Encoder()
 {
 }
 
-bool X264Encoder::EncodeFrame(uint8_t* in_yuvbuf, const int width, const int height, uint8_t* out_ppData[8], size_t out_linesize[8], bool in_forceKey)
+size_t X264Encoder::EncodeFrame(uint8_t* inYuvbuf, const int inWidth, const int inHeight,
+    uint8_t** outData, bool in_forceKey)
 {
-    if (in_yuvbuf != NULL) {//encode
+    if (inYuvbuf != NULL) {//encode
         m_pic_in.i_type = in_forceKey ? X264_TYPE_IDR : X264_TYPE_AUTO;
-        m_pic_in.img.plane[0] = in_yuvbuf;                          // 缓存 Y分量 数据
-        m_pic_in.img.plane[1] = in_yuvbuf + width * height;         // 缓存 U分量 数据
-        m_pic_in.img.plane[2] = in_yuvbuf + width * height * 5 / 4; // 缓存 V分量 数据
-        return Encode(&m_pic_in, out_ppData, out_linesize);
+        m_pic_in.img.plane[0] = inYuvbuf;                              // 缓存 Y分量 数据
+        m_pic_in.img.plane[1] = inYuvbuf + inWidth * inHeight;         // 缓存 U分量 数据
+        m_pic_in.img.plane[2] = inYuvbuf + inWidth * inHeight * 5 / 4; // 缓存 V分量 数据
+        return Encode(&m_pic_in, outData);
     }
-    return Encode(NULL, out_ppData, out_linesize);
+    return Encode(NULL, outData);
 }
 
-bool X264Encoder::Encode(x264_picture_t* pic_in, uint8_t* out_ppData[8], size_t out_linesize[8])
+size_t X264Encoder::Encode(x264_picture_t* pic_in, uint8_t** outData)
 {
-    if (!m_pHandle) {
-        return false;
-    }
-
-    if (out_linesize == nullptr || out_ppData == nullptr) {
+    if (!m_pX264) {
         return false;
     }
 
     if (pic_in != NULL) //encode
     {
-        int num = 0; // nals的数量
-        x264_nal_t* nals; // NAL数据包
+        int nalsNum = 0;        // nals的数量
+        x264_nal_t* nals;       // NAL数据包
         x264_picture_t pic_out; // 编码后输出帧
 
-        // x264_encoder_encode 编码一帧图像
-        if (x264_encoder_encode(m_pHandle, &nals, &num, &m_pic_in, &pic_out) < 0) {
+        if (x264_encoder_encode(m_pX264, &nals, &nalsNum, &m_pic_in, &pic_out) < 0) {
             return false;
         }
 
+        int dataSize = 0;
+        std::vector<int> nalsLength;
+        nalsLength.push_back(0);
+        for (x264_nal_t* nal = nals; nal < nals + nalsNum; ++nal)
+        {
+            dataSize += nal->i_payload;
+            nalsLength.push_back(dataSize);
+        }
+        *outData = new uint8_t[dataSize];
+
         int index = 0;
-        for (x264_nal_t* nal = nals; nal < nals + num; ++nal, ++index) 
+        for (x264_nal_t* nal = nals; nal < nals + nalsNum; ++nal, ++index)
         {
-            out_linesize[index] = nal->i_payload;
-            if (out_linesize[index] > 0) 
-            {
-                out_ppData[index] = new uint8_t[out_linesize[index]];
-                memcpy_s(out_ppData[index], out_linesize[index], nal->p_payload, nal->i_payload);
-            }
+            memcpy_s(*outData + nalsLength[index], dataSize, nal->p_payload, nal->i_payload);
         }
-        out_ppData[index] = nullptr;
+        return dataSize;
     }
-    else //flush
-    {
-        int num = 0;
-        x264_nal_t* nal;
-        x264_picture_t pic_out;
+    //else //flush
+    //{
+    //    int num = 0;
+    //    x264_nal_t* nal;
+    //    x264_picture_t pic_out;
 
-        // x264_encoder_delayed_frames 输出编码器中缓存的数据
-        for (int index = 0; x264_encoder_delayed_frames(m_pHandle) >= 1 && index < 8; ++index) 
-        {
-            int frame_size = x264_encoder_encode(m_pHandle, &nal, &num, NULL, &pic_out);
-            if (frame_size == 0) 
-            {
-                if (index == 0) {
-                    return false;
-                }
-                else {
-                    out_ppData[index] = NULL;
-                    return true;
-                }
-            }
-            else 
-            {
-                out_linesize[index] = frame_size;
-                if (out_linesize[index] > 0) {
-                    out_ppData[index] = new uint8_t[out_linesize[index]];
-                    memcpy_s(out_ppData[index], out_linesize[index], nal->p_payload, frame_size);
-                }
-            }
-        }
-    }
-
-    return true;
+    //    // x264_encoder_delayed_frames 输出编码器中缓存的数据
+    //    for (int index = 0; x264_encoder_delayed_frames(m_pHandle) >= 1 && index < 8; ++index)
+    //    {
+    //        int frame_size = x264_encoder_encode(m_pHandle, &nal, &num, NULL, &pic_out);
+    //        if (frame_size == 0)
+    //        {
+    //            if (index == 0) {
+    //                return false;
+    //            }
+    //            else {
+    //                out_ppData[index] = NULL;
+    //                return true;
+    //            }
+    //        }
+    //        else
+    //        {
+    //            out_linesize[index] = frame_size;
+    //            if (out_linesize[index] > 0) {
+    //                out_ppData[index] = new uint8_t[out_linesize[index]];
+    //                memcpy_s(out_ppData[index], out_linesize[index], nal->p_payload, frame_size);
+    //            }
+    //        }
+    //    }
+    //}
+    //
+    //return true;
 }
