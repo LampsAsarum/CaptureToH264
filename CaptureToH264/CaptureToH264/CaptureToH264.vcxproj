@@ -138,6 +138,7 @@
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
     <ClCompile Include="DXGICapture.cpp" />
+    <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="X264Encoder.cpp" />
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="Convert.h" />
     <ClInclude Include="DXGICapture.h" />
+    <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="GDICapture.h" />
     <ClInclude Include="X264Encoder.h" />
   </ItemGroup>

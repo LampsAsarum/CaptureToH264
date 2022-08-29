@@ -14,16 +14,16 @@ public:
     ~X264Encoder();
 
     bool EncodeFrame(
-        uint8_t* in_buf[3],
+        uint8_t* in_yuvbuf, const int width, const int height,
         uint8_t* out_ppData[8],
-        size_t out_linesize[8],
+        size_t   out_linesize[8],
         bool in_forceKey);
 
 private:
     bool Encode(
         x264_picture_t* pic_in,
         uint8_t* out_ppData[8],
-        size_t out_linesize[8]);
+        size_t   out_linesize[8]);
 
 private:
     x264_t* m_pHandle;

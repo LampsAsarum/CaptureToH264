@@ -41,13 +41,13 @@ X264Encoder::~X264Encoder()
 {
 }
 
-bool X264Encoder::EncodeFrame(uint8_t* in_buf[3], uint8_t* out_ppData[8], size_t out_linesize[8], bool in_forceKey)
+bool X264Encoder::EncodeFrame(uint8_t* in_yuvbuf, const int width, const int height, uint8_t* out_ppData[8], size_t out_linesize[8], bool in_forceKey)
 {
-    if (in_buf != NULL) {//encode
+    if (in_yuvbuf != NULL) {//encode
         m_pic_in.i_type = in_forceKey ? X264_TYPE_IDR : X264_TYPE_AUTO;
-        m_pic_in.img.plane[0] = in_buf[0]; // 缓存 Y分量 数据
-        m_pic_in.img.plane[1] = in_buf[1]; // 缓存 U分量 数据
-        m_pic_in.img.plane[2] = in_buf[2]; // 缓存 V分量 数据
+        m_pic_in.img.plane[0] = in_yuvbuf;                          // 缓存 Y分量 数据
+        m_pic_in.img.plane[1] = in_yuvbuf + width * height;         // 缓存 U分量 数据
+        m_pic_in.img.plane[2] = in_yuvbuf + width * height * 5 / 4; // 缓存 V分量 数据
         return Encode(&m_pic_in, out_ppData, out_linesize);
     }
     return Encode(NULL, out_ppData, out_linesize);
