@@ -140,6 +140,7 @@ void YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, 
 
 void H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height)
 {
+    //Convert::H264ToYUV420Pure(h264FilePath, yuvFilePath, width, height);
     Convert::H264ToYUV420(h264FilePath, yuvFilePath, width, height);
 }
 
@@ -190,9 +191,9 @@ int main()
     //DXGICaptureRgb32ToYuvToH264(width, height);
 
     //YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
-    //H264ToYUV420("DXGIScreen.h264", "DXGIScreen.yuv", width, height);
+    H264ToYUV420("DXGIScreen.h264", "DXGIScreen.yuv", width, height);
 
-    DXGICaptureRgb32ToYuvToH264ToYuv(width, height);
+    //DXGICaptureRgb32ToYuvToH264ToYuv(width, height);
 
     return 0;
 }

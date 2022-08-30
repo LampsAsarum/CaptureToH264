@@ -9,6 +9,9 @@ extern "C"
 {
 #include "x264.h"
 #include "libavcodec/avcodec.h"
+
+#include "libavformat/avformat.h"
+#include "libavutil/imgutils.h"
 };
 
 #pragma warning(disable:4996)
@@ -272,7 +275,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
             fread(pPic_in->img.plane[2], y_size, 1, fp_in);	//V
             break;
         case X264_CSP_I420:
-            fread(pPic_in->img.plane[0], y_size, 1,     fp_in);	//Y
+            fread(pPic_in->img.plane[0], y_size, 1, fp_in);	//Y
             fread(pPic_in->img.plane[1], y_size / 4, 1, fp_in);	//U
             fread(pPic_in->img.plane[2], y_size / 4, 1, fp_in);	//V
             break;
@@ -324,7 +327,7 @@ bool Convert::YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, in
     return true;
 }
 
-bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height)
+bool Convert::H264ToYUV420Pure(std::string h264FilePath, std::string yuvFilePath, int width, int height)
 {
     FILE* fp_in = fopen(h264FilePath.c_str(), "rb");
     FILE* fp_out = fopen(yuvFilePath.c_str(), "wb");
@@ -357,7 +360,7 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
         printf("Could not open codec\n");
         return false;
     }
-    
+
 
     AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
     AVPacket* packet = av_packet_alloc(); // 存储一帧（一般情况下）压缩编码数据
@@ -472,6 +475,101 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
     av_frame_free(&pFrame);
     avcodec_close(pCodecCtx);
     av_free(pCodecCtx);
+
+    return true;
+}
+
+bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, int width, int height)
+{
+    FILE* fp_out = fopen(yuvFilePath.c_str(), "wb+");
+    if (fp_out == NULL) {
+        printf("Error open files.\n");
+        return false;
+    }
+
+    av_register_all();//注册了和编解码器有关的组件
+    AVFormatContext* pFormatCtx = avformat_alloc_context();//创建AVFormatContext结构体
+
+    if (avformat_open_input(&pFormatCtx, h264FilePath.c_str(), NULL, NULL) != 0) { //打开视频流
+        printf("Couldn't open input stream.\n");
+        return false;
+    }
+    if (avformat_find_stream_info(pFormatCtx, NULL) < 0) { //获取流信息
+        printf("Couldn't find stream information.\n");
+        return false;
+    }
+    av_dump_format(pFormatCtx, 0, h264FilePath.c_str(), 0); // 打印流信息
+
+    int videoindex = -1;
+    for (int i = 0; i < pFormatCtx->nb_streams; i++) {
+        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+            videoindex = i;
+            break;
+        }
+    }
+    if (videoindex == -1) {
+        printf("Didn't find a video stream.\n");
+        return false;
+    }
+
+    AVCodecContext* pCodecCtx = pFormatCtx->streams[videoindex]->codec;
+    AVCodec* pCodec = avcodec_find_decoder(pCodecCtx->codec_id); //找到解码器
+    if (pCodec == NULL) {
+        printf("Codec not found.\n");
+        return false;
+    }
+    if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) { //打开解码器
+        printf("Could not open codec.\n");
+        return false;
+    }
+
+    AVFrame* pFrame = av_frame_alloc(); //解码帧初始化
+    unsigned char* out_buffer = (unsigned char*)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height, 1)); //内存分配
+
+    AVPacket* packet = (AVPacket*)av_malloc(sizeof(AVPacket));
+    while (av_read_frame(pFormatCtx, packet) >= 0) //获取媒体的一帧压缩编码数据。其中调用了av_parser_parse2()
+    {
+        if (packet->stream_index == videoindex)
+        {
+            int got_picture;
+            int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); // 解码数据为一帧
+            if (ret < 0) {
+                printf("Decode Error.\n");
+                return false;
+            }
+            if (got_picture) {
+                int y_size = pCodecCtx->width * pCodecCtx->height;
+                fwrite(pFrame->data[0], 1, y_size, fp_out);  //Y 
+                fwrite(pFrame->data[1], 1, y_size / 4, fp_out);  //U
+                fwrite(pFrame->data[2], 1, y_size / 4, fp_out);  //V
+                printf("Succeed to decode 1 frame!\n");
+            }
+        }
+        av_free_packet(packet);
+    }
+    
+    //Flush Decoder
+    while (true)
+    {
+        int got_picture;
+        int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
+        if (ret < 0 || !got_picture) {
+            break;
+        }
+
+        int y_size = pCodecCtx->width * pCodecCtx->height;
+        fwrite(pFrame->data[0], 1, y_size, fp_out);  //Y 
+        fwrite(pFrame->data[1], 1, y_size / 4, fp_out);  //U
+        fwrite(pFrame->data[2], 1, y_size / 4, fp_out);  //V
+
+        printf("Flush Decoder: Succeed to decode 1 frame!\n");
+    }
+
+    fclose(fp_out);
+
+    av_frame_free(&pFrame);
+    avcodec_close(pCodecCtx);
+    avformat_close_input(&pFormatCtx);
 
     return true;
 }
