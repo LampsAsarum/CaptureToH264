@@ -173,7 +173,7 @@ bool Convert::Rgb24ToYUV420(unsigned char* rgbBuf, const int width, const int he
 // YUV420p：每4个 Y分量 共用一组 UV分量，前面全是Y分量，后面是U分量，再后面是V分量
 bool Convert::Rgb32ToYUV420(unsigned char* rgbBuf, const int width, const int height, unsigned char* yuvBuf, const int yuvBufferSize)
 {
-    // Ysize:(width*height); Usize:(width*height)/2; Vsize:(width*height)/2;
+    // Ysize:(width*height); Usize:(width*height)/4; Vsize:(width*height)/4;
     if (yuvBufferSize < width * height * 3 / 2) {
         return false;
     }

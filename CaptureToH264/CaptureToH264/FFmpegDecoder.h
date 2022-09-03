@@ -12,7 +12,7 @@ public:
     ~FFmpegDecoder();
 
     bool Init();
-    bool DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* out, const int outSize);
+    bool DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* outYuvBuffer, const int yuv420Size);
 
 private:
     AVCodecContext* pCodecCtx;

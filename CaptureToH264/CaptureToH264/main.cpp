@@ -25,7 +25,7 @@ void CaptureRgb24(int width, int height)
     unsigned char* bmpBuffer = new unsigned char[bmpSize];
 
     int yuvSize = width * height * 3 / 2;
-    unsigned char* yuvBuffer = (unsigned char*)malloc(width * height * 3 / 2);
+    unsigned char* yuvBuffer = new unsigned char[yuvSize];
 
     if (GDICapture::CaptureRgb24(rgbBuffer, rgb24Size))
     {
@@ -39,6 +39,10 @@ void CaptureRgb24(int width, int height)
             SaveFile("GDIScreen24.yuv", yuvBuffer, yuvSize);
         }
     }
+
+    delete[] rgbBuffer; rgbBuffer = nullptr;
+    delete[] bmpBuffer; bmpBuffer = nullptr;
+    delete[] yuvBuffer; yuvBuffer = nullptr;
 }
 
 void CaptureRgb32(int width, int height)
@@ -64,6 +68,10 @@ void CaptureRgb32(int width, int height)
             SaveFile("GDIScreen32.yuv", yuvBuffer, yuv420Size);
         }
     }
+
+    delete[] rgbBuffer; rgbBuffer = nullptr;
+    delete[] bmpBuffer; bmpBuffer = nullptr;
+    delete[] yuvBuffer; yuvBuffer = nullptr;
 }
 
 void DXGICaptureRgb32(int width, int height)
@@ -98,6 +106,10 @@ void DXGICaptureRgb32(int width, int height)
         }
         Sleep(1000);
     }
+
+    delete[] rgbBuffer; rgbBuffer = nullptr;
+    delete[] bmpBuffer; bmpBuffer = nullptr;
+    delete[] yuvBuffer; yuvBuffer = nullptr;
 }
 
 void DXGICaptureRgb32ToYuvToH264(int width, int height)
@@ -122,8 +134,7 @@ void DXGICaptureRgb32ToYuvToH264(int width, int height)
                 }
 
                 uint8_t* outData = nullptr;
-                bool bKeyFrame = i == 0 ? true : false;
-                size_t size = encoder.EncodeFrame(yuvBuffer, width, height, &outData, bKeyFrame);
+                size_t size = encoder.EncodeFrame(yuvBuffer, width, height, &outData, i == 0);
                 if (size != 0) {
                     SaveFile("DXGIScreen.h264", outData, size);
                 }
@@ -131,6 +142,9 @@ void DXGICaptureRgb32ToYuvToH264(int width, int height)
         }
         Sleep(25);
     }
+
+    delete[] rgbBuffer; rgbBuffer = nullptr;
+    delete[] yuvBuffer; yuvBuffer = nullptr;
 }
 
 void YUV420ToH264(std::string yuvFilePath, std::string h264FilePath, int width, int height)
@@ -149,31 +163,41 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
     int rgb32Size = width * height * 4;
     unsigned char* rgbBuffer = new unsigned char[rgb32Size];
     int yuv420Size = width * height * 3 / 2;
-    unsigned char* yuvBuffer = new unsigned char[yuv420Size];
+    unsigned char* yuv420Buffer = new unsigned char[yuv420Size];
+
+    unsigned char* decoderYuvBuffer = new unsigned char[yuv420Size];
 
     DXGICapture capture;
     X264Encoder encoder(width, height);
     FFmpegDecoder decoder;
     decoder.Init();
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++) 
     {
         std::cout << i << std::endl;
         if (capture.CaptureRgb32(rgbBuffer, rgb32Size)) 
         {
-            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuvBuffer, yuv420Size)) 
+            if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuv420Buffer, yuv420Size))
             {
                 uint8_t* outData = nullptr;
                 bool bKeyFrame = i == 0 ? true : false;
-                size_t size = encoder.EncodeFrame(yuvBuffer, width, height, &outData, bKeyFrame);
+                size_t size = encoder.EncodeFrame(yuv420Buffer, width, height, &outData, bKeyFrame);
                 if (size != 0) {
                     SaveFile("DXGIScreen.h264", outData, size);
                 }
 
-                decoder.DecoderFrame(outData, size, nullptr, 20);
+                decoder.DecoderFrame(outData, size, decoderYuvBuffer, yuv420Size);
+                if (i == 0) {
+                    continue; // 目前还不清楚为什么第一张是全粉的图片，但是在 DecoderFrame 中直接写入文件是没有问题的
+                }
+                SaveFile("DXGIScreen.yuv", decoderYuvBuffer, yuv420Size);
             }
         }
     }
+
+    delete[] rgbBuffer; rgbBuffer = nullptr;
+    delete[] yuv420Buffer; yuv420Buffer = nullptr;
+    delete[] decoderYuvBuffer; decoderYuvBuffer = nullptr;
 }
 
 int main()

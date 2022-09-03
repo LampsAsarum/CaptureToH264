@@ -44,12 +44,12 @@ bool FFmpegDecoder::Init()
     return true;
 }
 
-bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* out, const int outSize)
+bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* outYuvBuffer, const int yuv420Size)
 {
     AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
     AVPacket* packet = av_packet_alloc(); // 存储一帧（一般情况下）压缩编码数据
 
-    FILE* fp_out = fopen("text.yuv", "ab");
+    //FILE* fp_out = fopen("text.yuv", "ab");
 
     while (cur_size > 0)
     {
@@ -88,48 +88,52 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
         if (got_picture) {
             //Y, U, V
             for (int i = 0; i < pFrame->height; i++) {
-                fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+                //fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+                memcpy_s(outYuvBuffer + pFrame->linesize[0] * i, yuv420Size, 
+                    pFrame->data[0] + pFrame->linesize[0] * i, pFrame->width);
             }
             for (int i = 0; i < pFrame->height / 2; i++) {
-                fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+               // fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+                memcpy_s(outYuvBuffer + pFrame->width * pFrame->height + pFrame->linesize[1] * i, yuv420Size, 
+                    pFrame->data[1] + pFrame->linesize[1] * i, pFrame->width / 2);
             }
             for (int i = 0; i < pFrame->height / 2; i++) {
-                fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+                //fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+                memcpy_s(outYuvBuffer + pFrame->width * pFrame->height + (pFrame->width * pFrame->height) / 4 + pFrame->linesize[2] * i, yuv420Size,
+                    pFrame->data[2] + pFrame->linesize[2] * i, pFrame->width / 2);
             }
-
             printf("Succeed to decode 1 frame!\n");
         }
     }
 
     //Flush Decoder
-    packet->data = NULL;
-    packet->size = 0;
-    while (true) {
-        int got_picture;
-        int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
-        if (ret < 0) {
-            printf("Decode Error.\n");
-            return ret;
-        }
-        if (!got_picture) {
-            break;
-        }
-        else {
-            //Y, U, V
-            for (int i = 0; i < pFrame->height; i++) {
-                fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
-            }
-            for (int i = 0; i < pFrame->height / 2; i++) {
-                fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
-            }
-            for (int i = 0; i < pFrame->height / 2; i++) {
-                fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
-            }
+    //packet->data = NULL;
+    //packet->size = 0;
+    //while (true) {
+    //    int got_picture;
+    //    int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
+    //    if (ret < 0) {
+    //        printf("Decode Error.\n");
+    //        return ret;
+    //    }
+    //    if (!got_picture) {
+    //        break;
+    //    }
+    //    else {
+    //        //Y, U, V
+    //        for (int i = 0; i < pFrame->height; i++) {
+    //            fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+    //        }
+    //        for (int i = 0; i < pFrame->height / 2; i++) {
+    //            fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+    //        }
+    //        for (int i = 0; i < pFrame->height / 2; i++) {
+    //            fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+    //        }
+    //        printf("Flush Decoder: Succeed to decode 1 frame!\n");
+    //    }
+    //}
 
-            printf("Flush Decoder: Succeed to decode 1 frame!\n");
-        }
-    }
-
-    fclose(fp_out);
+    //fclose(fp_out);
     av_frame_free(&pFrame);
 }
