@@ -490,16 +490,19 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
     av_register_all();//注册了和编解码器有关的组件
     AVFormatContext* pFormatCtx = avformat_alloc_context();//创建AVFormatContext结构体
 
+    //1. 打开媒体文件
     if (avformat_open_input(&pFormatCtx, h264FilePath.c_str(), NULL, NULL) != 0) { //打开视频流
         printf("Couldn't open input stream.\n");
         return false;
     }
+    //2.读取媒体文件信息，给avFormatContext赋值
     if (avformat_find_stream_info(pFormatCtx, NULL) < 0) { //获取流信息
         printf("Couldn't find stream information.\n");
         return false;
     }
     av_dump_format(pFormatCtx, 0, h264FilePath.c_str(), 0); // 打印流信息
 
+    //3. 匹配到视频流的index
     int videoindex = -1;
     for (int i = 0; i < pFormatCtx->nb_streams; i++) {
         if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -513,11 +516,13 @@ bool Convert::H264ToYUV420(std::string h264FilePath, std::string yuvFilePath, in
     }
 
     AVCodecContext* pCodecCtx = pFormatCtx->streams[videoindex]->codec;
+    //4. 根据视频流信息的codec_id找到对应的解码器
     AVCodec* pCodec = avcodec_find_decoder(pCodecCtx->codec_id); //找到解码器
     if (pCodec == NULL) {
         printf("Codec not found.\n");
         return false;
     }
+    //5.使用给定的AVCodec初始化AVCodecContext
     if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) { //打开解码器
         printf("Could not open codec.\n");
         return false;
