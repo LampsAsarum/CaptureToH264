@@ -10,6 +10,9 @@ FFmpegDecoder::FFmpegDecoder()
 
 FFmpegDecoder::~FFmpegDecoder()
 {
+    av_parser_close(pCodecParserCtx);
+    avcodec_close(pCodecCtx);
+    av_free(pCodecCtx);
 }
 
 bool FFmpegDecoder::Init()
@@ -41,13 +44,15 @@ bool FFmpegDecoder::Init()
     return true;
 }
 
-static int length = 0;
 bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* out, const int outSize)
 {
     AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
     AVPacket* packet = av_packet_alloc(); // 存储一帧（一般情况下）压缩编码数据
 
-    do {
+    FILE* fp_out = fopen("text.yuv", "ab");
+
+    while (cur_size > 0)
+    {
         /*  av_parser_parse2 使用AVCodecParser从输入的数据流中分离出一帧一帧的压缩编码数据。 解析获得一个Packet
         int av_parser_parse2(AVCodecParserContext *s, AVCodecContext* avctx,
                             uint8_t** poutbuf, int* poutbuf_size,
@@ -61,40 +66,70 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
             AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
         cur_ptr += len;
         cur_size -= len;
-    } while (packet->size == 0);
 
+        if (packet->size == 0)
+            continue;
 
-    //Some Info from AVCodecParserContext
-    printf("[Packet]Size:%d\n", packet->size); length += packet->size;
-    switch (pCodecParserCtx->pict_type) {
-    case AV_PICTURE_TYPE_I: printf("Type:I\n"); break;
-    case AV_PICTURE_TYPE_P: printf("Type:P\n"); break;
-    case AV_PICTURE_TYPE_B: printf("Type:B\n"); break;
-    default: printf("Type:Other\n"); break;
-    }
-    //printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
-
-    int got_picture;
-    int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); //解码一帧数据
-    if (ret < 0) {
-        printf("Decode Error.\n");
-        return false;
-    }
-
-    FILE* fp_out = fopen("text.yuv", "ab");
-    if (got_picture)
-    {
-        //Y, U, V
-        for (int i = 0; i < pFrame->height; i++) {
-            fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+        printf("[Packet]Size:%6d\t", packet->size);
+        switch (pCodecParserCtx->pict_type) {
+        case AV_PICTURE_TYPE_I: printf("Type:I\t"); break;
+        case AV_PICTURE_TYPE_P: printf("Type:P\t"); break;
+        case AV_PICTURE_TYPE_B: printf("Type:B\t"); break;
+        default: printf("Type:Other\t"); break;
         }
-        for (int i = 0; i < pFrame->height / 2; i++) {
-            fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+        printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
+
+        int got_picture;
+        int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
+        if (ret < 0) {
+            printf("Decode Error.\n");
+            return ret;
         }
-        for (int i = 0; i < pFrame->height / 2; i++) {
-            fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+        if (got_picture) {
+            //Y, U, V
+            for (int i = 0; i < pFrame->height; i++) {
+                fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+            }
+
+            printf("Succeed to decode 1 frame!\n");
         }
     }
 
-    printf("[ALL]length:%d\n", length);
+    //Flush Decoder
+    packet->data = NULL;
+    packet->size = 0;
+    while (true) {
+        int got_picture;
+        int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
+        if (ret < 0) {
+            printf("Decode Error.\n");
+            return ret;
+        }
+        if (!got_picture) {
+            break;
+        }
+        else {
+            //Y, U, V
+            for (int i = 0; i < pFrame->height; i++) {
+                fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
+            }
+            for (int i = 0; i < pFrame->height / 2; i++) {
+                fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
+            }
+
+            printf("Flush Decoder: Succeed to decode 1 frame!\n");
+        }
+    }
+
+    fclose(fp_out);
+    av_frame_free(&pFrame);
 }

@@ -22,7 +22,7 @@ X264Encoder::X264Encoder(int width, int height)
     x264Param.i_keyint_min = X264_KEYINT_MIN_AUTO;
     x264Param.i_keyint_max = X264_KEYINT_MAX_INFINITE;  // 设定IDR帧之间的最大间隔，在此间隔设置IDR关键帧
     x264Param.rc.i_rc_method = X264_RC_ABR;             // 码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
-    x264Param.rc.i_bitrate = 2 * width * height * 3 / 8 / 1024;
+    x264Param.rc.i_bitrate = 5 * width * height * 3 / 8 / 1024;
     x264Param.i_log_level = X264_LOG_NONE;
 
     x264_param_apply_profile(&x264Param, x264_profile_names[1]);

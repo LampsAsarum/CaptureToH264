@@ -156,7 +156,7 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
     FFmpegDecoder decoder;
     decoder.Init();
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1000; i++)
     {
         std::cout << i << std::endl;
         if (capture.CaptureRgb32(rgbBuffer, rgb32Size)) 
@@ -191,9 +191,9 @@ int main()
     //DXGICaptureRgb32ToYuvToH264(width, height);
 
     //YUV420ToH264("DXGIScreen.yuv", "DXGIScreen.h264", width, height);
-    H264ToYUV420("DXGIScreen.h264", "DXGIScreen.yuv", width, height);
+    //H264ToYUV420("DXGIScreen.h264", "DXGIScreen.yuv", width, height);
 
-    //DXGICaptureRgb32ToYuvToH264ToYuv(width, height);
+    DXGICaptureRgb32ToYuvToH264ToYuv(width, height);
 
     return 0;
 }
