@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
+    <ClCompile Include="Direct3DRender.cpp" />
     <ClCompile Include="DXGICapture.cpp" />
     <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="GDICapture.cpp" />
@@ -145,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Convert.h" />
+    <ClInclude Include="Direct3DRender.h" />
     <ClInclude Include="DXGICapture.h" />
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="GDICapture.h" />

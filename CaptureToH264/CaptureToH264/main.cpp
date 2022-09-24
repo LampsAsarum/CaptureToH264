@@ -1,11 +1,14 @@
 #include <iostream>
 #include <Windows.h>
+#include <vector>
 #include "GDICapture.h"
 #include "DXGICapture.h"
 #include "Convert.h"
 #include "X264Encoder.h"
 #include "FFmpegDecoder.h"
-#include <vector>
+#include "Direct3DRender.h"
+
+#pragma warning(disable:4996)
 
 void SaveFile(const char* fileName, unsigned char* buf, int size)
 {
@@ -221,3 +224,87 @@ int main()
 
     return 0;
 }
+
+
+/*
+使用D3D渲染的代码，需要注掉main函数，并将项目 属性 -> 连接器 -> 系统 -> 子系统 选择 窗口 
+*/
+//Direct3DRender d3d;
+//const int pixel_w = 2240, pixel_h = 1400;
+//
+//LRESULT WINAPI MyWndProc(HWND hwnd, UINT msg, WPARAM wparma, LPARAM lparam)
+//{
+//    switch (msg)
+//    {
+//    case WM_DESTROY:
+//        d3d.Cleanup();
+//        PostQuitMessage(0);
+//        return 0;
+//    }
+//    return DefWindowProc(hwnd, msg, wparma, lparam);
+//}
+//
+//int WINAPI WinMain(__in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd)
+//{
+//    WNDCLASSEX wc;
+//    ZeroMemory(&wc, sizeof(wc));
+//
+//    wc.cbSize = sizeof(wc);
+//    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+//    wc.lpfnWndProc = (WNDPROC)MyWndProc;
+//    wc.lpszClassName = L"D3D";
+//    wc.style = CS_HREDRAW | CS_VREDRAW;
+//
+//    RegisterClassEx(&wc);
+//
+//    HWND hwnd = NULL;
+//    hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D (Surface)", WS_OVERLAPPEDWINDOW, 100, 100, pixel_w / 2, pixel_h / 2, NULL, NULL, hInstance, NULL);
+//    if (hwnd == NULL)
+//    {
+//        return -1;
+//    }
+//
+//    if (d3d.Init(hwnd, pixel_w, pixel_h) == E_FAIL)
+//    {
+//        return -1;
+//    }
+//
+//    ShowWindow(hwnd, nShowCmd);
+//    UpdateWindow(hwnd);
+//
+//    FILE* fp = fopen("DXGIScreen.yuv", "rb+");
+//    if (fp == NULL)
+//    {
+//        printf("Cannot open this file.\n");
+//        return -1;
+//    }
+//    unsigned char* buffer = new unsigned char[pixel_w * pixel_h * 3 / 2];
+//
+//    MSG msg;
+//    ZeroMemory(&msg, sizeof(msg));
+//
+//    while (msg.message != WM_QUIT)
+//    {
+//        //PeekMessage, not GetMessage
+//        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+//        {
+//            TranslateMessage(&msg);
+//            DispatchMessage(&msg);
+//        }
+//        else
+//        {
+//            Sleep(40);
+//            fread(buffer, 1, pixel_w * pixel_h * 3 / 2, fp);
+//            if (fread(buffer, 1, pixel_w * pixel_h * 3 / 2, fp) != pixel_w * pixel_h * 3 / 2)
+//            {
+//                fseek(fp, 0, SEEK_SET);//将指针放到头部
+//                fread(buffer, 1, pixel_w * pixel_h * 3 / 2, fp);
+//            }
+//            d3d.Render(buffer);
+//        }
+//    }
+//    delete[] buffer;
+//
+//    UnregisterClass(L"D3D", hInstance);
+//    return 0;
+//}
