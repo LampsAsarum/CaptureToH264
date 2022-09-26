@@ -5,7 +5,11 @@
 
 FFmpegDecoder::FFmpegDecoder()
 {
+    pFrame = av_frame_alloc();
+    packet = av_packet_alloc();
 
+    pCodecParserCtx = nullptr;
+    pCodecCtx = nullptr;
 }
 
 FFmpegDecoder::~FFmpegDecoder()
@@ -13,6 +17,8 @@ FFmpegDecoder::~FFmpegDecoder()
     av_parser_close(pCodecParserCtx);
     avcodec_close(pCodecCtx);
     av_free(pCodecCtx);
+
+    av_frame_free(&pFrame);
 }
 
 bool FFmpegDecoder::Init()
@@ -46,11 +52,9 @@ bool FFmpegDecoder::Init()
 
 bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* outYuvBuffer, const int yuv420Size)
 {
-    AVFrame* pFrame = av_frame_alloc(); //存储一帧解码后的像素数据
-    AVPacket* packet = av_packet_alloc(); // 存储一帧（一般情况下）压缩编码数据
+    bool ret = false;
 
     //FILE* fp_out = fopen("text.yuv", "ab");
-
     while (cur_size > 0)
     {
         /*  av_parser_parse2 使用AVCodecParser从输入的数据流中分离出一帧一帧的压缩编码数据。 解析获得一个Packet
@@ -80,10 +84,9 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
         printf("Number:%4d\n", pCodecParserCtx->output_picture_number);
 
         int got_picture;
-        int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
-        if (ret < 0) {
+        if (avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet) < 0) {
             printf("Decode Error.\n");
-            return ret;
+            return false;
         }
         if (got_picture) {
             //Y, U, V
@@ -103,8 +106,11 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
                     pFrame->data[2] + pFrame->linesize[2] * i, pFrame->width / 2);
             }
             printf("Succeed to decode 1 frame!\n");
+            ret = true;
         }
     }
+
+    return ret;
 
     //Flush Decoder
     //packet->data = NULL;
@@ -135,5 +141,4 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
     //}
 
     //fclose(fp_out);
-    av_frame_free(&pFrame);
 }

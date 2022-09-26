@@ -168,7 +168,7 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
     int yuv420Size = width * height * 3 / 2;
     unsigned char* yuv420Buffer = new unsigned char[yuv420Size];
 
-    unsigned char* decoderYuvBuffer = new unsigned char[yuv420Size];
+    unsigned char* decoderYuvBuffer = new unsigned char[yuv420Size]();
 
     DXGICapture capture;
     X264Encoder encoder(width, height);
@@ -188,12 +188,10 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
                 if (size != 0) {
                     SaveFile("DXGIScreen.h264", outData, size);
                 }
-
-                decoder.DecoderFrame(outData, size, decoderYuvBuffer, yuv420Size);
-                if (i == 0) {
-                    continue; // 目前还不清楚为什么第一张是全粉的图片，但是在 DecoderFrame 中直接写入文件是没有问题的
+                bool ret = decoder.DecoderFrame(outData, size, decoderYuvBuffer, yuv420Size);
+                if (ret) {
+                    SaveFile("DXGIScreen.yuv", decoderYuvBuffer, yuv420Size);
                 }
-                SaveFile("DXGIScreen.yuv", decoderYuvBuffer, yuv420Size);
             }
         }
     }
