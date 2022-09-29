@@ -168,7 +168,7 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
     int yuv420Size = width * height * 3 / 2;
     unsigned char* yuv420Buffer = new unsigned char[yuv420Size];
 
-    unsigned char* decoderYuvBuffer = new unsigned char[yuv420Size]();
+    unsigned char* decoderYuvBuffer = nullptr;
 
     DXGICapture capture;
     X264Encoder encoder(width, height);
@@ -182,16 +182,22 @@ void DXGICaptureRgb32ToYuvToH264ToYuv(int width, int height)
         {
             if (Convert::Rgb32ToYUV420(rgbBuffer, width, height, yuv420Buffer, yuv420Size))
             {
-                uint8_t* outData = nullptr;
+                uint8_t* h264Buffer = nullptr;
                 bool bKeyFrame = i == 0 ? true : false;
-                size_t size = encoder.EncodeFrame(yuv420Buffer, width, height, &outData, bKeyFrame);
-                if (size != 0) {
-                    SaveFile("DXGIScreen.h264", outData, size);
+                size_t h264Size = encoder.EncodeFrame(yuv420Buffer, width, height, &h264Buffer, bKeyFrame);
+                if (h264Size != 0) {
+                    SaveFile("DXGIScreen.h264", h264Buffer, h264Size);
                 }
-                bool ret = decoder.DecoderFrame(outData, size, decoderYuvBuffer, yuv420Size);
-                if (ret) {
+
+                int yuvSize = decoder.DecoderFrame(h264Buffer, h264Size, &decoderYuvBuffer);
+                unsigned char* tmp = decoderYuvBuffer;
+                while (yuvSize > 0) {
                     SaveFile("DXGIScreen.yuv", decoderYuvBuffer, yuv420Size);
+                    yuvSize -= yuv420Size;
+                    tmp += yuv420Size;
                 }
+                delete[] decoderYuvBuffer;
+                decoderYuvBuffer = nullptr;
             }
         }
     }

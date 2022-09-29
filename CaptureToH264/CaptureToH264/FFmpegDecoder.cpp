@@ -50,12 +50,12 @@ bool FFmpegDecoder::Init()
     return true;
 }
 
-bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned char* outYuvBuffer, const int yuv420Size)
+unsigned int FFmpegDecoder::DecoderFrame(unsigned char* h264Buffer, int h264Size, unsigned char** outYuvBuffer)
 {
-    bool ret = false;
+    int lastSize = 0;
+    int currentSize = 0;
 
-    //FILE* fp_out = fopen("text.yuv", "ab");
-    while (cur_size > 0)
+    while (h264Size > 0)
     {
         /*  av_parser_parse2 使用AVCodecParser从输入的数据流中分离出一帧一帧的压缩编码数据。 解析获得一个Packet
         int av_parser_parse2(AVCodecParserContext *s, AVCodecContext* avctx,
@@ -66,10 +66,11 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
         则代表解析还没有完成，还需要再次调用av_parser_parse2()解析一部分数据才可以得到解析后的数据帧。
         当函数执行完后输出数据不为空的时候，代表解析完成，可以将poutbuf中的这帧数据取出来做后续处理。*/
         int len = av_parser_parse2(pCodecParserCtx, pCodecCtx,
-            &packet->data, &packet->size, cur_ptr, cur_size,
+            &packet->data, &packet->size, h264Buffer, h264Size,
             AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
-        cur_ptr += len;
-        cur_size -= len;
+
+        h264Buffer += len;
+        h264Size -= len;
 
         if (packet->size == 0)
             continue;
@@ -86,59 +87,42 @@ bool FFmpegDecoder::DecoderFrame(unsigned char* cur_ptr, int cur_size, unsigned 
         int got_picture;
         if (avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet) < 0) {
             printf("Decode Error.\n");
-            return false;
+            return 0;
         }
-        if (got_picture) {
-            //Y, U, V
+
+        if (got_picture)
+        {
+            // 自动扩容
+            lastSize = currentSize;
+            currentSize += pFrame->width * pFrame->height * 3 / 2;
+
+            unsigned char* tmp = new unsigned char[currentSize]();
+            memcpy(tmp, *outYuvBuffer, lastSize);
+            delete[](*outYuvBuffer);
+            *outYuvBuffer = tmp;
+            unsigned char* yuvBuffer = (*outYuvBuffer) + lastSize;
+
             for (int i = 0; i < pFrame->height; i++) {
-                //fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
-                memcpy_s(outYuvBuffer + pFrame->linesize[0] * i, yuv420Size, 
-                    pFrame->data[0] + pFrame->linesize[0] * i, pFrame->width);
+                memcpy(yuvBuffer + pFrame->width * i,
+                    pFrame->data[0] + pFrame->linesize[0] * i,
+                    pFrame->width);
             }
+
             for (int i = 0; i < pFrame->height / 2; i++) {
-               // fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
-                memcpy_s(outYuvBuffer + pFrame->width * pFrame->height + pFrame->linesize[1] * i, yuv420Size, 
-                    pFrame->data[1] + pFrame->linesize[1] * i, pFrame->width / 2);
+                memcpy(yuvBuffer + (pFrame->width * pFrame->height) + (pFrame->width / 2) * i,
+                    pFrame->data[1] + pFrame->linesize[1] * i,
+                    pFrame->width / 2);
             }
+
             for (int i = 0; i < pFrame->height / 2; i++) {
-                //fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
-                memcpy_s(outYuvBuffer + pFrame->width * pFrame->height + (pFrame->width * pFrame->height) / 4 + pFrame->linesize[2] * i, yuv420Size,
-                    pFrame->data[2] + pFrame->linesize[2] * i, pFrame->width / 2);
+                memcpy(yuvBuffer + pFrame->width * pFrame->height + ((pFrame->width / 2) * (pFrame->height / 2)) + pFrame->width / 2 * i,
+                    pFrame->data[2] + pFrame->linesize[2] * i,
+                    pFrame->width / 2);
             }
             printf("Succeed to decode 1 frame!\n");
-            ret = true;
+
         }
     }
 
-    return ret;
-
-    //Flush Decoder
-    //packet->data = NULL;
-    //packet->size = 0;
-    //while (true) {
-    //    int got_picture;
-    //    int ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
-    //    if (ret < 0) {
-    //        printf("Decode Error.\n");
-    //        return ret;
-    //    }
-    //    if (!got_picture) {
-    //        break;
-    //    }
-    //    else {
-    //        //Y, U, V
-    //        for (int i = 0; i < pFrame->height; i++) {
-    //            fwrite(pFrame->data[0] + pFrame->linesize[0] * i, 1, pFrame->width, fp_out);
-    //        }
-    //        for (int i = 0; i < pFrame->height / 2; i++) {
-    //            fwrite(pFrame->data[1] + pFrame->linesize[1] * i, 1, pFrame->width / 2, fp_out);
-    //        }
-    //        for (int i = 0; i < pFrame->height / 2; i++) {
-    //            fwrite(pFrame->data[2] + pFrame->linesize[2] * i, 1, pFrame->width / 2, fp_out);
-    //        }
-    //        printf("Flush Decoder: Succeed to decode 1 frame!\n");
-    //    }
-    //}
-
-    //fclose(fp_out);
+    return currentSize;
 }
