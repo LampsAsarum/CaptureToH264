@@ -1,6 +1,8 @@
 # CaptureToH264
 
-C++ 使用 GDI/DXGI 截取屏幕，再使用 x264 转为 H264 格式视频。
+uses GDI/DXGI to capture the screen, and then uses x264 to convert to H264 format video.
+
+使用 GDI/DXGI 截取屏幕，再使用 x264 转为 H264 格式视频。
 
 ## 2022/8/17:
 
