@@ -13,48 +13,63 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Capture">
+      <UniqueIdentifier>{31c35bfa-9cea-48f2-b2cb-75ff95442b4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Decoder">
+      <UniqueIdentifier>{e4ee6793-c5bb-49b3-9292-45e01a6d2a2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Encoder">
+      <UniqueIdentifier>{023b3429-a5e4-4c69-aea2-0eb73fc31af9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{48546878-e1cd-4583-81ee-7651c5f75f66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{beaa334f-49a0-4735-998f-18a20d505a09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="GDICapture.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Convert.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="DXGICapture.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Capture</Filter>
     </ClCompile>
-    <ClCompile Include="X264Encoder.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="GDICapture.cpp">
+      <Filter>Capture</Filter>
     </ClCompile>
     <ClCompile Include="FFmpegDecoder.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Decoder</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3DRender.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="X264Encoder.cpp">
+      <Filter>Encoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3DRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Convert.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GDICapture.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Convert.h">
-      <Filter>头文件</Filter>
+      <Filter>Capture</Filter>
     </ClInclude>
     <ClInclude Include="DXGICapture.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="X264Encoder.h">
-      <Filter>头文件</Filter>
+      <Filter>Capture</Filter>
     </ClInclude>
     <ClInclude Include="FFmpegDecoder.h">
-      <Filter>头文件</Filter>
+      <Filter>Decoder</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3DRender.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="X264Encoder.h">
+      <Filter>Encoder</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3DRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Convert.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

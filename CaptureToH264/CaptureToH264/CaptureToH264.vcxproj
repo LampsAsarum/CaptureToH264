@@ -76,7 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3thLibrary\libyuv\include;$(SolutionDir)3thLibrary\libx264\include;$(SolutionDir)3thLibrary\FFmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3thLibrary\libyuv\include;$(SolutionDir)3thLibrary\libx264\include;$(SolutionDir)3thLibrary\FFmpeg\include;$(SolutionDir)3thLibrary\FFmpeg\include\ffmpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3thLibrary\libyuv\include;$(SolutionDir)3thLibrary\libx264\include;$(SolutionDir)3thLibrary\FFmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3thLibrary\libyuv\include;$(SolutionDir)3thLibrary\libx264\include;$(SolutionDir)3thLibrary\FFmpeg\include;$(SolutionDir)3thLibrary\FFmpeg\include\ffmpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -105,6 +105,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)3thLibrary\libyuv\lib\$(Configuration);$(SolutionDir)3thLibrary\libx264\lib;$(SolutionDir)3thLibrary\FFmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>yuv.lib;libx264.lib;avcodec.lib;avutil.lib;swscale.lib;avformat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,7 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Convert.cpp" />
-    <ClCompile Include="Direct3DRender.cpp" />
+    <ClCompile Include="Direct3DRenderer.cpp" />
     <ClCompile Include="DXGICapture.cpp" />
     <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="GDICapture.cpp" />
@@ -146,7 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Convert.h" />
-    <ClInclude Include="Direct3DRender.h" />
+    <ClInclude Include="Direct3DRenderer.h" />
     <ClInclude Include="DXGICapture.h" />
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="GDICapture.h" />

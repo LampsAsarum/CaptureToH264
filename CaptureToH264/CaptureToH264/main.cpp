@@ -6,7 +6,7 @@
 #include "Convert.h"
 #include "X264Encoder.h"
 #include "FFmpegDecoder.h"
-#include "Direct3DRender.h"
+#include "Direct3DRenderer.h"
 
 #pragma warning(disable:4996)
 
@@ -215,9 +215,6 @@ int main()
     CloseWindow(hWnd);
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
-
-    //CaptureRgb24(width, height);
-    //CaptureRgb32(width, height);
 
     //DXGICaptureRgb32ToYuvToH264(width, height);
 
