@@ -5,6 +5,8 @@ VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CaptureToH264", "CaptureToH264\CaptureToH264.vcxproj", "{4368AE07-FC8D-47FB-B6D6-7F2C0915FE8F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HwFFmpeg", "HwFFmpeg\HwFFmpeg.vcxproj", "{E2425C95-2C76-494C-8417-9A74D40B4775}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{4368AE07-FC8D-47FB-B6D6-7F2C0915FE8F}.Release|x64.Build.0 = Release|x64
 		{4368AE07-FC8D-47FB-B6D6-7F2C0915FE8F}.Release|x86.ActiveCfg = Release|Win32
 		{4368AE07-FC8D-47FB-B6D6-7F2C0915FE8F}.Release|x86.Build.0 = Release|Win32
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Debug|x64.ActiveCfg = Debug|x64
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Debug|x64.Build.0 = Debug|x64
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Debug|x86.ActiveCfg = Debug|Win32
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Debug|x86.Build.0 = Debug|Win32
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Release|x64.ActiveCfg = Release|x64
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Release|x64.Build.0 = Release|x64
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Release|x86.ActiveCfg = Release|Win32
+		{E2425C95-2C76-494C-8417-9A74D40B4775}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
