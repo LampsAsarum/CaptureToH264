@@ -16,24 +16,36 @@
     <Filter Include="Tmp">
       <UniqueIdentifier>{a0f6b912-b195-49f7-9aba-d9e52831a7cd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{af818599-b444-4be4-ab03-001ba84c8db5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QsvH264">
+      <UniqueIdentifier>{d1a1c6dc-8dcc-49dc-9025-02f77c5668b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConvertScale.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="DXGICapture.h">
       <Filter>Tmp</Filter>
     </ClInclude>
+    <ClInclude Include="ConvertScale.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="QsvH264Encoder.h">
+      <Filter>QsvH264</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConvertScale.cpp">
-      <Filter>头文件</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DXGICapture.cpp">
       <Filter>Tmp</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvertScale.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="QsvH264Encoder.cpp">
+      <Filter>QsvH264</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

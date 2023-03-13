@@ -135,11 +135,13 @@
   <ItemGroup>
     <ClInclude Include="ConvertScale.h" />
     <ClInclude Include="DXGICapture.h" />
+    <ClInclude Include="QsvH264Encoder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConvertScale.cpp" />
     <ClCompile Include="DXGICapture.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="QsvH264Encoder.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
