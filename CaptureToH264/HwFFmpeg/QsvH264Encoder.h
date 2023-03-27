@@ -38,9 +38,17 @@ public:
     /// <returns>编码后的数据大小</returns>
     int Encoder(const unsigned char* inImageData, unsigned char* h264Buffer, int h264BufferSize);
 
+    /// <summary>
+    /// 获取输入的像素格式，使用前需要先调用 OpenEncoder。默认为 NV12
+    /// </summary>
+    /// <returns></returns>
+    AVPixelFormat GetInputPixelFormat() { return m_InputPixelFormat; }
+
 private:
     AVCodecContext* m_pEncoderContext = nullptr;
 
     AVFrame* m_pAVFrame = nullptr;
+
+    AVPixelFormat m_InputPixelFormat = AV_PIX_FMT_NV12;
 };
 

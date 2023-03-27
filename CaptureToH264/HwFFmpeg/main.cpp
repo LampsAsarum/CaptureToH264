@@ -20,36 +20,30 @@ void DXGICaptureRgb32(int width, int height)
 
     unsigned char* h264Buffer = new unsigned char[rgb32Size];
 
-    DXGICapture capture;
-    ConvertScale scale;
-    scale.Init(width, height, AV_PIX_FMT_BGRA, width, height, AV_PIX_FMT_NV12);
-
     QsvH264Encoder encoder;
     encoder.OpenEncoder(width, height, 30, width * height * 3);
+    AVPixelFormat pix = encoder.GetInputPixelFormat();
 
-    int yuvSize = ConvertScale::GetImageSize(width, height, AV_PIX_FMT_NV12, 16);
+    ConvertScale scale;
+    scale.Init(width, height, AV_PIX_FMT_BGRA, width, height, pix);
+
+    int yuvSize = ConvertScale::GetImageSize(width, height, pix, 16);
     unsigned char* yuvBuffer = new unsigned char[yuvSize];
 
+    DXGICapture capture;
     char picName[128] = { 0 };
 
     for (int i = 0; i < 100; i++)
     {
         if (capture.CaptureRgb32(rgbBuffer, rgb32Size))
         {
-            if (i > 0)
-            {
-                /*snprintf(picName, sizeof(picName), "DXGIScreen%d.rgb", i);
-                SaveFile(picName, rgbBuffer, rgb32Size);*/
-                scale.Convert(rgbBuffer, yuvBuffer);
-                /*snprintf(picName, sizeof(picName), "DXGIScreen%d.yuv", i);
-                SaveFile(picName, yuvBuffer, yuvSize);*/
+            scale.Convert(rgbBuffer, yuvBuffer);
 
-                int ret = encoder.Encoder(yuvBuffer, h264Buffer, rgb32Size);
-                if (ret > 0)
-                {
-                    SaveFile("DXGIScreen.h264", h264Buffer, ret);
-                    std::cout << ret << std::endl;
-                }
+            int ret = encoder.Encoder(yuvBuffer, h264Buffer, rgb32Size);
+            if (ret > 0)
+            {
+                SaveFile("DXGIScreen.h264", h264Buffer, ret);
+                std::cout << ret << std::endl;
             }
         }
         Sleep(100);
